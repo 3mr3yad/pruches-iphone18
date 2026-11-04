@@ -297,34 +297,31 @@ export const STICKY_BAR = {
 
 /* ---------------------------------- flow ---------------------------------- */
 
-export type StorageId = '256' | '512' | '1024';
+/**
+ * Maps an API colour key (e.g. "burgundy", "test_black", "glacier_blue") to
+ * the finish whose swatch and photo represent it. Unknown colours get null.
+ */
+export function finishIdFor(colorKey: string): ColorId | null {
+  const key = colorKey.toLowerCase();
+  if (key.includes('burgundy') || key.includes('wine') || key.includes('red')) return 'burgundy';
+  if (key.includes('glacier') || key.includes('blue')) return 'glacier';
+  if (key.includes('black')) return 'black';
+  return null;
+}
 
-export const STORAGES: { id: StorageId; label: string }[] = [
-  { id: '256', label: '256 GB' },
-  { id: '512', label: '512 GB' },
-  { id: '1024', label: '1 TB' },
+export type FulfillmentId = 'shipping' | 'pickup';
+
+/**
+ * Frame 494:153. Figma's visual order is الشحن (left) · الاستلام من الفرع
+ * (right); under `dir="rtl"` the first DOM child renders on the right.
+ */
+export const FULFILLMENTS: { id: FulfillmentId; label: string }[] = [
+  { id: 'pickup', label: 'الاستلام من الفرع' },
+  { id: 'shipping', label: 'الشحن' },
 ];
 
-export type DayId = 'sat' | 'sun' | 'mon' | 'tue' | 'wed' | 'thu';
-
-/** Saturday through Thursday — no Friday (frames 467:449 / 463:157). */
-export const DAYS: { id: DayId; label: string }[] = [
-  { id: 'sat', label: 'السبت' },
-  { id: 'sun', label: 'الأحد' },
-  { id: 'mon', label: 'الإثنين' },
-  { id: 'tue', label: 'الثلاثاء' },
-  { id: 'wed', label: 'الأربعاء' },
-  { id: 'thu', label: 'الخميس' },
-];
-
-export type TimeId = '18' | '19' | '20' | '21';
-
-export const TIMES: { id: TimeId; label: string; period: string; short: string }[] = [
-  { id: '18', label: '٦:٠٠', period: 'مساءً', short: '٦:٠٠ م' },
-  { id: '19', label: '٧:٠٠', period: 'مساءً', short: '٧:٠٠ م' },
-  { id: '20', label: '٨:٠٠', period: 'مساءً', short: '٨:٠٠ م' },
-  { id: '21', label: '٩:٠٠', period: 'مساءً', short: '٩:٠٠ م' },
-];
+/** How many upcoming pickup days to offer. Fridays are skipped (frames 467:449 / 463:157). */
+export const PICKUP_DAYS_SHOWN = 6;
 
 export const FLOW = {
   step1: {
@@ -333,25 +330,106 @@ export const FLOW = {
     sub: 'حدّد اختيارك، ثم تابع لمراجعة تفاصيل الشراء.',
     colorLabel: 'اللون',
     storageLabel: 'سعة التخزين',
-    storageNote: 'خيارات السعة للتوضيح وليست مواصفات مؤكدة.',
+    storageNote: 'توفّر الألوان والسعات حسب المخزون.',
+    fulfillmentLabel: 'طريقة التوصيل',
+    fulfillmentNote: 'اختر الشحن إلى عنوانك أو الاستلام من الفرع.',
     summaryLabel: 'اختيارك',
+    loading: 'جارٍ تحميل الخيارات المتوفرة…',
+    loadError: 'تعذّر تحميل الخيارات المتوفرة. تحقق من اتصالك وحاول مرة أخرى.',
+    empty: 'لا توجد أجهزة متوفرة حالياً.',
+    retry: 'إعادة المحاولة',
   },
   step2: {
-    kicker: 'الخطوة الثانية · الموعد',
-    title: 'اختر اليوم والوقت',
-    sub: 'حدّد الموعد المناسب لاستلام جهازك، ثم تابع الشراء.',
-    subShort: 'حدّد الموعد المناسب لك، ثم تابع.',
-    dayLabel: 'اليوم',
+    kicker: 'الخطوة الثانية · الاستلام',
+    title: 'الاستلام من الفرع',
+    sub: 'اختر الفرع ويوم الاستلام، ثم أدخل بيانات التواصل.',
+    subShort: 'اختر الفرع واليوم وأدخل بياناتك.',
+    branchLabel: 'الفرع',
+    branchesLoading: 'جارٍ تحميل الفروع…',
+    branchesError: 'تعذّر تحميل الفروع.',
+    noBranches: 'لا توجد فروع متاحة للاستلام حالياً.',
+    dayLabel: 'يوم الاستلام',
     dayHint: 'من السبت إلى الخميس',
-    timeLabel: 'الوقت',
-    timeHint: 'من ٦ إلى ٩ مساءً',
-    timeHintDesktop: 'المواعيد المسائية',
-    summaryLabel: 'موعدك المختار',
-    summaryLabelDesktop: 'موعدك',
+    contactLabel: 'بيانات التواصل',
+    proceed: 'المتابعة للدفع',
     back: 'رجوع',
   },
+  /**
+   * Frame 494:212 — reached from step 1 when «الشحن» is the chosen method.
+   * Figma's «الدولة» field is replaced by المدينة + الحي, which the order API
+   * requires; shipping is Saudi-only (+966).
+   */
+  shipping: {
+    kicker: 'الخطوة الثانية · الشحن',
+    title: 'بيانات الشحن',
+    sub: 'املأ البيانات أدناه لتأكيد عنوان الشحن.',
+    subShort: 'املأ بياناتك لتأكيد عنوان الشحن.',
+    save: 'حفظ بيانات الشحن',
+    back: 'رجوع',
+  },
+  /** Shared by the shipping form and the pickup contact block. */
+  fields: {
+    email: {
+      label: 'البريد الإلكتروني',
+      placeholder: 'name@example.com',
+      error: 'أدخل بريدًا إلكترونيًا صحيحًا.',
+    },
+    name: {
+      label: 'الاسم الكامل',
+      placeholder: 'اسم المستلم',
+      error: 'أدخل اسم المستلم.',
+    },
+    phone: {
+      label: 'رقم الجوال',
+      placeholder: '50 000 0000',
+      error: 'أدخل رقم جوال صحيحًا لرمز الدولة المختار.',
+    },
+    city: {
+      label: 'المدينة',
+      placeholder: 'الرياض',
+      error: 'أدخل المدينة.',
+    },
+    district: {
+      label: 'الحي',
+      placeholder: 'اسم الحي',
+      error: 'أدخل الحي.',
+    },
+    nationalAddress: {
+      label: 'العنوان',
+      placeholder: 'العنوان الوطني أو: شارع، مبنى، رقم الشقة',
+      error: 'أدخل عنوان الشحن بالتفصيل.',
+    },
+  },
+  dialCodeLabel: 'رمز الدولة',
+  step3: {
+    kicker: 'الخطوة الثالثة · الدفع',
+    title: 'الدفع',
+    sub: 'ادفع بأمان عبر ميسر لتأكيد طلبك.',
+    orderLabel: 'رقم الطلب',
+    totalLabel: 'الإجمالي',
+    loading: 'جارٍ تجهيز نموذج الدفع…',
+    loadError: 'تعذّر تحميل نموذج الدفع. حدّث الصفحة وحاول مرة أخرى.',
+    missingKey: 'الدفع غير مهيأ بعد (مفتاح ميسر غير موجود).',
+  },
+  result: {
+    verifying: 'جارٍ التحقق من الدفع…',
+    paidTitle: 'تم تأكيد طلبك',
+    paidSub: 'شكراً لك! استلمنا الدفع وسنتواصل معك قريباً لتأكيد التفاصيل.',
+    pendingTitle: 'الدفع قيد المعالجة',
+    pendingSub: 'لم يصلنا تأكيد الدفع بعد. سنحدّث حالة طلبك فور وصوله.',
+    failedTitle: 'لم يكتمل الدفع',
+    failedSub: 'لم يتم تأكيد الدفع. يمكنك المحاولة مرة أخرى.',
+    cancelledTitle: 'تم إلغاء الطلب',
+    orderLabel: 'رقم الطلب',
+    checkAgain: 'تحديث الحالة',
+    tryAgain: 'حاول مرة أخرى',
+    done: 'تم',
+  },
+  orderError: 'تعذّر إنشاء الطلب. تحقق من البيانات وحاول مرة أخرى.',
+  networkError: 'تعذّر الاتصال بالخادم. تحقق من اتصالك وحاول مرة أخرى.',
   continue: 'متابعة الشراء',
-  note: 'راجع تفاصيل طلبك في الخطوة التالية قبل التأكيد.',
+  submitting: 'جارٍ إنشاء الطلب…',
+  note: 'راجع تفاصيل طلبك قبل الدفع.',
   close: 'إغلاق',
   previewCaption: 'لون عميق ودافئ، يلتقط الضوء مع كل زاوية.',
 };

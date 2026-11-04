@@ -10,6 +10,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "libphonenumber-js": "1.12.25",
     "motion": "11.15.0",
     "next": "14.2.35",
     "react": "18.3.1",

@@ -39,6 +39,8 @@ export function useFocusTrap<T extends HTMLElement>(active: boolean, onEscape: (
 
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
+        // A popup inside the dialog (e.g. the country list) handles its own Esc.
+        if ((event.target as Element | null)?.closest?.('[data-own-escape]')) return;
         event.stopPropagation();
         onEscape();
         return;

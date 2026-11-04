@@ -3,7 +3,7 @@
 import Image from 'next/image';
 import { AnimatePresence, motion } from 'motion/react';
 import { EASE } from '@/lib/motion';
-import { FINISHES, FINISHES_SECTION, type ColorId } from '@/lib/content';
+import { FINISHES, FINISHES_SECTION, finishIdFor, type ColorId } from '@/lib/content';
 import { useMotionPrefs } from '@/hooks/useMotionPrefs';
 import { usePurchaseFlow } from '@/hooks/usePurchaseFlow';
 import { Reveal, RevealItem } from '../ui/Reveal';
@@ -94,7 +94,9 @@ function PhoneCrop({ src, alt, className }: { src: string; alt: string; classNam
 export function Finishes() {
   const { reduced } = useMotionPrefs();
   const { color, setColor, openFlow } = usePurchaseFlow();
-  const active = FINISHES.find((finish) => finish.id === color) ?? FINISHES[0];
+  // The flow may hold an API colour key (e.g. "test_black"); map it back to a finish.
+  const finishId = finishIdFor(color) ?? color;
+  const active = FINISHES.find((finish) => finish.id === finishId) ?? FINISHES[0];
 
   const fade = reduced ? { duration: 0.15 } : { duration: 0.35, ease: EASE };
 
@@ -121,7 +123,7 @@ export function Finishes() {
           id={finish.id}
           name={finish.name}
           dot={finish.dot}
-          selected={finish.id === color}
+          selected={finish.id === finishId}
           onSelect={() => setColor(finish.id)}
           size={size}
           showLabel={showLabel}

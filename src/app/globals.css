@@ -204,4 +204,12 @@
       );
     }
   }
+
+  /* Scrolls if it must, but never shows a scrollbar (purchase modal column). */
+  .no-scrollbar {
+    scrollbar-width: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
 }

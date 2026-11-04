@@ -1,10 +1,11 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { PurchaseFlowProvider, type Order } from '@/hooks/usePurchaseFlow';
+import { PurchaseFlowProvider } from '@/hooks/usePurchaseFlow';
 import { Header } from '@/components/Header';
 import { StickyBuyBar } from '@/components/StickyBuyBar';
 import { PurchaseDialog } from '@/components/flow/PurchaseDialog';
+import { PaymentResult } from '@/components/flow/PaymentResult';
 import { Hero } from '@/components/sections/Hero';
 import { PriceCompare } from '@/components/sections/PriceCompare';
 import { Overview } from '@/components/sections/Overview';
@@ -65,19 +66,14 @@ function Page() {
       <Footer />
       <StickyBuyBar visible={heroCtaGone && !finalCtaVisible} />
       <PurchaseDialog />
+      <PaymentResult />
     </>
   );
 }
 
 export default function Home() {
-  const handleContinue = (order: Order) => {
-    // TODO: hand the order to checkout — out of scope for this build.
-    // eslint-disable-next-line no-console
-    console.log('onContinue', order);
-  };
-
   return (
-    <PurchaseFlowProvider onContinue={handleContinue}>
+    <PurchaseFlowProvider>
       <Page />
     </PurchaseFlowProvider>
   );

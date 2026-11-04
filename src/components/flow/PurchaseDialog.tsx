@@ -2,15 +2,16 @@
 
 import { useCallback, useId } from 'react';
 import Image from 'next/image';
-import { AnimatePresence, motion, type PanInfo } from 'motion/react';
+import { AnimatePresence, motion, useDragControls, type PanInfo } from 'motion/react';
 import { EASE, SHEET_SPRING, backdrop, modalPanel, stepSlide } from '@/lib/motion';
-import { FINISHES, FLOW, PRODUCT_NAME_LATIN, STORAGES } from '@/lib/content';
+import { FINISHES, FLOW, PRODUCT_NAME_LATIN, finishIdFor } from '@/lib/content';
 import { usePurchaseFlow } from '@/hooks/usePurchaseFlow';
 import { useFocusTrap, useScrollLock } from '@/hooks/useDialog';
 import { useIsDesktopDialog } from '@/hooks/useViewport';
 import { useMotionPrefs } from '@/hooks/useMotionPrefs';
 import { Button } from '../ui/Button';
-import { StepAppointment, StepColorStorage } from './Steps';
+import { Spinner, StepColorStorage, StepPickup, StepShipping } from './Steps';
+import { StepPayment } from './Payment';
 
 const CloseIcon = ({ size = 18 }: { size?: number }) => (
   <svg viewBox="0 0 18 18" width={size} height={size} aria-hidden>
@@ -33,7 +34,23 @@ const BackArrow = () => (
 
 export function PurchaseDialog() {
   const flow = usePurchaseFlow();
-  const { open, step, dir, closeFlow, next, back, canContinue, color, storage } = flow;
+  const {
+    open,
+    step,
+    dir,
+    closeFlow,
+    next,
+    back,
+    canContinue,
+    activeColor,
+    activeStorage,
+    submitting,
+    method,
+  } = flow;
+  const dragControls = useDragControls();
+
+  /** «الشحن» routes step 2 to the shipping form (494:212); pickup keeps branch & day. */
+  const isShipping = step === 2 && method === 'shipping';
   const isDesktop = useIsDesktopDialog();
   const { reduced } = useMotionPrefs();
   const uid = useId().replace(/:/g, '');
@@ -41,8 +58,9 @@ export function PurchaseDialog() {
   useScrollLock(open);
   const panelRef = useFocusTrap<HTMLDivElement>(open, closeFlow);
 
-  const activeColor = FINISHES.find((finish) => finish.id === color) ?? FINISHES[0];
-  const activeStorage = STORAGES.find((item) => item.id === storage) ?? STORAGES[1];
+  const finishId = activeColor ? finishIdFor(activeColor.key) : null;
+  const activeFinish = FINISHES.find((finish) => finish.id === finishId) ?? FINISHES[0];
+  const colorName = activeColor?.label ?? activeFinish.name;
   const titleId = `${uid}-flow-title`;
 
   const onDragEnd = useCallback(
@@ -53,7 +71,9 @@ export function PurchaseDialog() {
     [closeFlow],
   );
 
-  const stepContent = step === 1 ? FLOW.step1 : FLOW.step2;
+  const stepContent =
+    step === 1 ? FLOW.step1 : step === 3 ? FLOW.step3 : isShipping ? FLOW.shipping : FLOW.step2;
+  const sheetSub = 'subShort' in stepContent ? stepContent.subShort : stepContent.sub;
   const variants = stepSlide(dir);
 
   const stepBody = (variant: 'sheet' | 'modal') => (
@@ -67,23 +87,41 @@ export function PurchaseDialog() {
       >
         {step === 1 ? (
           <StepColorStorage variant={variant} />
+        ) : step === 2 ? (
+          isShipping ? (
+            <StepShipping variant={variant} />
+          ) : (
+            <StepPickup variant={variant} />
+          )
         ) : (
-          <StepAppointment variant={variant} />
+          <StepPayment variant={variant} />
         )}
       </motion.div>
     </AnimatePresence>
   );
 
-  const continueButton = (
-    <Button
-      size={isDesktop ? 'lg' : 'md'}
-      className="w-full"
-      disabled={!canContinue}
-      onClick={next}
-    >
-      {FLOW.continue}
-    </Button>
-  );
+  // Step 3 hands over to Moyasar's own pay button.
+  const continueButton =
+    step === 3 ? null : (
+      <Button
+        size="md"
+        className="w-full"
+        disabled={!canContinue}
+        showArrow={!submitting}
+        onClick={next}
+      >
+        {submitting ? (
+          <span className="inline-flex items-center gap-2.5">
+            <Spinner />
+            {FLOW.submitting}
+          </span>
+        ) : step === 2 ? (
+          isShipping ? FLOW.shipping.save : FLOW.step2.proceed
+        ) : (
+          FLOW.continue
+        )}
+      </Button>
+    );
 
   return (
     <AnimatePresence>
@@ -101,7 +139,7 @@ export function PurchaseDialog() {
 
           {isDesktop ? (
             /* ------------------------------ modal ------------------------------ */
-            <div className="absolute inset-0 grid place-items-center p-6">
+            <div className="absolute inset-0 grid place-items-center p-6 [@media(max-height:860px)]:p-3">
               <motion.div
                 key="modal"
                 ref={panelRef}
@@ -113,18 +151,18 @@ export function PurchaseDialog() {
                 initial="hidden"
                 animate="show"
                 exit="exit"
-                className="flex max-h-[92vh] w-full max-w-[1120px] overflow-hidden rounded-sheet border border-modal-line bg-modal-bg shadow-modal lg:h-[760px]"
+                className="flex max-h-[94vh] w-full max-w-[1120px] overflow-hidden rounded-sheet border border-modal-line bg-modal-bg shadow-modal"
               >
                 {/* RTL: configuration leads so it sits on the right, portrait on the left. */}
-                <div className="flex flex-1 flex-col items-start gap-6 overflow-y-auto ps-8 pe-10 pb-[30px] pt-9">
-                  <div className="flex w-full flex-col gap-1.5 text-start">
+                <div className="flex flex-1 flex-col no-scrollbar items-start gap-4 overflow-y-auto overscroll-contain ps-8 pe-10 pb-6 pt-6 [@media(max-height:860px)]:gap-3 [@media(max-height:860px)]:pb-4 [@media(max-height:860px)]:pt-4">
+                  <div className="flex w-full flex-col gap-0.5 text-start">
                     <div className="flex w-full items-center justify-between">
-                      <p className="font-latin text-xl text-pink">{PRODUCT_NAME_LATIN}</p>
-                      {step === 2 ? (
+                      <p className="font-latin text-base text-pink">{PRODUCT_NAME_LATIN}</p>
+                      {step > 1 ? (
                         <button
                           type="button"
                           onClick={back}
-                          className="inline-flex min-h-11 items-center gap-1.5 text-[13px] text-modal-body transition-colors duration-200 ease-quint hover:text-white"
+                          className="inline-flex min-h-9 items-center gap-1.5 text-[13px] text-modal-body transition-colors duration-200 ease-quint hover:text-white"
                         >
                           <BackArrow />
                           {FLOW.step2.back}
@@ -133,16 +171,16 @@ export function PurchaseDialog() {
                     </div>
                     <h2
                       id={titleId}
-                      className="text-[36px] font-extrabold leading-[1.5] text-white"
+                      className="text-[28px] font-extrabold leading-[1.4] text-white [@media(max-height:860px)]:text-2xl"
                     >
                       {stepContent.title}
                     </h2>
-                    <p className="text-[15px] leading-[1.8] text-modal-body">{stepContent.sub}</p>
+                    <p className="text-sm leading-[1.7] text-modal-body">{stepContent.sub}</p>
                   </div>
 
                   {stepBody('modal')}
 
-                  <div className="mt-2 flex w-full flex-col gap-4">
+                  <div className="mt-1 flex w-full flex-col gap-2.5">
                     {continueButton}
                     <p className="w-full text-center text-xs leading-[1.6] text-muted">
                       {FLOW.note}
@@ -154,7 +192,7 @@ export function PurchaseDialog() {
                   {/* Figma 463:261 — 696x624 at left -138 / top 48 inside the 420x760 rail. */}
                   <Image
                     src="/images/hero.webp"
-                    alt={`آيفون 18 برو ماكس باللون ${activeColor.name}`}
+                    alt={`آيفون 18 برو ماكس باللون ${colorName}`}
                     width={1440}
                     height={960}
                     sizes="420px"
@@ -177,11 +215,11 @@ export function PurchaseDialog() {
                     <CloseIcon />
                   </button>
                   <div className="absolute inset-x-8 bottom-[70px] flex flex-col items-center gap-2 text-center">
-                    <p className="text-[23px] font-bold text-white">{activeColor.heading}</p>
+                    <p className="text-[23px] font-bold text-white">{colorName}.</p>
                     <p className="text-[13px] text-modal-body">{FLOW.previewCaption}</p>
-                    {step === 2 ? (
+                    {step > 1 && activeStorage ? (
                       <p className="font-latin text-[13px] text-modal-body">
-                        <bdi>{activeStorage.label}</bdi>
+                        <bdi>{activeStorage}</bdi>
                       </p>
                     ) : null}
                   </div>
@@ -202,12 +240,22 @@ export function PurchaseDialog() {
               exit={reduced ? { opacity: 0 } : { y: '100%' }}
               transition={reduced ? { duration: 0.15 } : SHEET_SPRING}
               drag={reduced ? false : 'y'}
+              dragControls={dragControls}
+              /* A drag panel calls preventDefault on pointerdown, which stops
+                 inputs from taking focus on touch. Once a step has inputs,
+                 the drag starts from the handle only. */
+              dragListener={step === 1}
               dragConstraints={{ top: 0, bottom: 0 }}
               dragElastic={{ top: 0, bottom: 0.4 }}
               onDragEnd={onDragEnd}
               className="absolute inset-x-0 bottom-0 max-h-[88vh] overflow-y-auto rounded-t-sheet border-t border-sheet-line bg-sheet px-gutter pb-[30px] pt-2.5"
             >
-              <div className="flex items-start justify-center pb-4">
+              <div
+                onPointerDown={(event) => {
+                  if (!reduced) dragControls.start(event);
+                }}
+                className="flex touch-none items-start justify-center pb-4"
+              >
                 <span aria-hidden className="h-[5px] w-10 rounded-[9px] bg-[#3a3338]" />
               </div>
 
@@ -226,14 +274,14 @@ export function PurchaseDialog() {
                   />
                 </div>
                 <div className="flex flex-1 flex-col gap-0.5 text-start">
-                  {step === 2 ? (
-                    <p className="text-[11px] font-bold text-pink">{FLOW.step2.kicker}</p>
+                  {step > 1 ? (
+                    <p className="text-[11px] font-bold text-pink">{stepContent.kicker}</p>
                   ) : null}
                   <h2 id={titleId} className="text-xl font-extrabold text-white">
                     {stepContent.title}
                   </h2>
                   <p className="text-[13px] text-body">
-                    {step === 1 ? FLOW.step1.sub : FLOW.step2.subShort}
+                    {sheetSub}
                   </p>
                 </div>
                 <div className="flex shrink-0 flex-col items-center gap-2">
@@ -245,7 +293,7 @@ export function PurchaseDialog() {
                   >
                     <CloseIcon size={16} />
                   </button>
-                  {step === 2 ? (
+                  {step > 1 ? (
                     <button
                       type="button"
                       onClick={back}
