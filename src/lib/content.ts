@@ -270,6 +270,18 @@ export const FAQ = [
     a: 'ثلاثة ألوان: عنابي، وأسود، وأزرق جليدي. يختلف توفّر الألوان والسعات حسب المخزون في فروعنا.',
   },
   {
+    q: 'ما السعات المتوفرة؟',
+    a: 'المتوفر حالياً آيفون 18 برو ماكس بسعة 256 جيجابايت فقط. سعات 512 جيجابايت و1 تيرابايت و2 تيرابايت غير متوفرة حالياً.',
+  },
+  {
+    q: 'ما مواعيد الاستلام من الفرع؟',
+    a: 'من السبت إلى الخميس، من ٨ إلى ١٠ مساءً، في فرعينا بالرياض: فرع المرسلات (2789 هشام بن عبدالملك) وفرع المونسية (طريق الدمام الفرعي). الاستلام من الفرع مجاني.',
+  },
+  {
+    q: 'كم تكلفة الشحن ومدته؟',
+    a: 'رسوم الشحن ٤٩ ريال لكل مدن المملكة، ويصلك الطلب خلال ٣ إلى ٥ أيام. داخل الرياض يمكنك الاستلام من الفرع، أو التوصيل في نفس اليوم أو اليوم التالي.',
+  },
+  {
     q: 'ما مقاس الشاشة؟',
     a: 'شاشة ProMotion بمقاس 6.9 بوصة، بمعدل تحديث حتى 120 هرتز وسطوع أعلى في الأجواء المشمسة.',
   },
@@ -323,6 +335,64 @@ export const FULFILLMENTS: { id: FulfillmentId; label: string }[] = [
 /** How many upcoming pickup days to offer. Fridays are skipped (frames 467:449 / 463:157). */
 export const PICKUP_DAYS_SHOWN = 6;
 
+/**
+ * Every Pro Max storage tier, with Apple's official Saudi price in halalas
+ * (apple.com/sa, checked 2026-11-04). A tier the order API doesn't sell for
+ * the chosen colour is shown disabled as «غير متوفر» at this price; tiers the
+ * API does return use the API's (Wafi) price instead.
+ */
+export const STORAGE_TIERS: { label: string; officialPrice: number }[] = [
+  { label: '256GB', officialPrice: 609900 },
+  { label: '512GB', officialPrice: 709900 },
+  { label: '1TB', officialPrice: 909900 },
+  { label: '2TB', officialPrice: 1209900 },
+];
+
+/** Shipping to any city in the Kingdom, in halalas. Display only — the charge is the order's amount. */
+export const SHIPPING_FEE = 4900;
+
+/**
+ * Pickup slots: Saturday–Thursday, 8–10 pm, at both branches. Values are the
+ * order API's `pickup_time` (it accepts 18:00–21:00; only 20:00 and 21:00
+ * fall inside the 8–10 pm window).
+ */
+export const PICKUP_TIMES = [
+  { id: '20:00', label: '٨ م', range: 'من ٨ إلى ٩ مساءً' },
+  { id: '21:00', label: '٩ م', range: 'من ٩ إلى ١٠ مساءً' },
+] as const;
+export type PickupTimeId = (typeof PICKUP_TIMES)[number]['id'];
+
+/**
+ * Street address and map link for each branch, matched on the API's
+ * `name_ar` (the API's `address` is empty for now).
+ */
+export const BRANCH_LOCATIONS: { match: string; name: string; address: string; mapUrl: string }[] = [
+  {
+    match: 'المرسلات',
+    name: 'فرع المرسلات',
+    address: '2789 هشام بن عبدالملك، المرسلات، الرياض 12461',
+    mapUrl: 'https://www.google.com/maps/search/?api=1&query=24.7480577%2C46.685024',
+  },
+  {
+    match: 'المونسية',
+    name: 'فرع المونسية',
+    address: 'طريق الدمام الفرعي، المونسية، الرياض 13253',
+    mapUrl:
+      'https://www.google.com/maps/search/?api=1&query=' +
+      encodeURIComponent('عالم وافي، طريق الدمام الفرعي، المونسية، الرياض 13253'),
+  },
+];
+
+export function branchLocationFor(nameAr: string) {
+  return BRANCH_LOCATIONS.find((location) => nameAr.includes(location.match)) ?? null;
+}
+
+/** True when the shipping city is Riyadh (same-day / next-day delivery). */
+export function isRiyadh(city: string): boolean {
+  const value = city.trim().toLowerCase();
+  return value.includes('رياض') || value.includes('riyadh');
+}
+
 export const FLOW = {
   step1: {
     kicker: 'الخطوة الأولى · الجهاز',
@@ -332,7 +402,14 @@ export const FLOW = {
     storageLabel: 'سعة التخزين',
     storageNote: 'توفّر الألوان والسعات حسب المخزون.',
     fulfillmentLabel: 'طريقة التوصيل',
-    fulfillmentNote: 'اختر الشحن إلى عنوانك أو الاستلام من الفرع.',
+    fulfillmentNotes: {
+      pickup: 'استلام مجاني من فرعينا في الرياض، من السبت إلى الخميس، من ٨ إلى ١٠ مساءً.',
+      shipping:
+        'شحن لكل مدن المملكة خلال ٣–٥ أيام بـ ٤٩ ريال. داخل الرياض: توصيل في نفس اليوم أو اليوم التالي.',
+    },
+    unavailable: 'غير متوفر',
+    shippingLine: 'الشحن',
+    shippingFree: 'الاستلام من الفرع مجاناً',
     summaryLabel: 'اختيارك',
     loading: 'جارٍ تحميل الخيارات المتوفرة…',
     loadError: 'تعذّر تحميل الخيارات المتوفرة. تحقق من اتصالك وحاول مرة أخرى.',
@@ -342,14 +419,17 @@ export const FLOW = {
   step2: {
     kicker: 'الخطوة الثانية · الاستلام',
     title: 'الاستلام من الفرع',
-    sub: 'اختر الفرع ويوم الاستلام، ثم أدخل بيانات التواصل.',
-    subShort: 'اختر الفرع واليوم وأدخل بياناتك.',
+    sub: 'اختر الفرع ويوم ووقت الاستلام، ثم أدخل بيانات التواصل.',
+    subShort: 'اختر الفرع واليوم والوقت وأدخل بياناتك.',
     branchLabel: 'الفرع',
     branchesLoading: 'جارٍ تحميل الفروع…',
     branchesError: 'تعذّر تحميل الفروع.',
     noBranches: 'لا توجد فروع متاحة للاستلام حالياً.',
     dayLabel: 'يوم الاستلام',
     dayHint: 'من السبت إلى الخميس',
+    timeLabel: 'وقت الاستلام',
+    timeHint: 'من ٨ إلى ١٠ مساءً',
+    mapLink: 'الموقع على الخريطة',
     contactLabel: 'بيانات التواصل',
     proceed: 'المتابعة للدفع',
     back: 'رجوع',
@@ -365,6 +445,8 @@ export const FLOW = {
     sub: 'املأ البيانات أدناه لتأكيد عنوان الشحن.',
     subShort: 'املأ بياناتك لتأكيد عنوان الشحن.',
     save: 'حفظ بيانات الشحن',
+    deliveryNote: 'التوصيل خلال ٣–٥ أيام لكل مدن المملكة · رسوم الشحن ٤٩ ريال.',
+    riyadhNote: 'داخل الرياض: يصلك الطلب في نفس اليوم أو اليوم التالي · رسوم الشحن ٤٩ ريال.',
     back: 'رجوع',
   },
   /** Shared by the shipping form and the pickup contact block. */

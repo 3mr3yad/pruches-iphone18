@@ -52,7 +52,10 @@ export function OptionTile({
   label,
   className = '',
   variant = 'sheet',
+  disabled = false,
 }: {
+  /** Shown but not selectable (e.g. an out-of-stock storage tier). */
+  disabled?: boolean;
   selected: boolean;
   onSelect: () => void;
   children: React.ReactNode;
@@ -77,10 +80,13 @@ export function OptionTile({
       role="radio"
       aria-checked={selected}
       aria-label={label}
-      onClick={onSelect}
-      whileTap={reduced ? undefined : { scale: 0.97 }}
+      onClick={disabled ? undefined : onSelect}
+      disabled={disabled}
+      whileTap={reduced || disabled ? undefined : { scale: 0.97 }}
       transition={{ duration: 0.2, ease: EASE }}
-      className={`flex min-h-11 items-center justify-center rounded-2xl transition-colors duration-200 ease-quint ${base} ${className}`}
+      className={`flex min-h-11 items-center justify-center rounded-2xl transition-colors duration-200 ease-quint ${base} ${
+        disabled ? 'cursor-not-allowed opacity-45' : ''
+      } ${className}`}
     >
       {children}
     </motion.button>

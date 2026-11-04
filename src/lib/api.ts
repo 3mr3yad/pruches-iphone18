@@ -35,7 +35,13 @@ export type CreateOrderBody = {
   customer_email: string;
   fulfillment_method: FulfillmentMethod;
 } & (
-  | { fulfillment_method: 'pickup'; branch_id: number; pickup_date: string }
+  | {
+      fulfillment_method: 'pickup';
+      branch_id: number;
+      pickup_date: string;
+      /** "20:00" or "21:00" (the API accepts 18:00–21:00). */
+      pickup_time: string;
+    }
   | { fulfillment_method: 'shipping'; city: string; district: string; national_address: string }
 );
 
@@ -49,7 +55,11 @@ export type CreatedOrder = {
   status: OrderStatus;
 };
 
-export type OrderDetails = CreatedOrder & Record<string, unknown>;
+export type OrderDetails = CreatedOrder & {
+  pickup_time?: string | null;
+  /** pickup_date + pickup_time, for display. */
+  pickup_at?: string | null;
+} & Record<string, unknown>;
 
 export class ApiError extends Error {
   status: number;

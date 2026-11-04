@@ -5,6 +5,7 @@ import { FLOW, PRODUCT_NAME_AR, RIYAL } from '@/lib/content';
 import { formatHalalas } from '@/lib/format';
 import { usePurchaseFlow } from '@/hooks/usePurchaseFlow';
 import { Spinner } from './Steps';
+import './moyasar-theme.css';
 
 /**
  * Moyasar Payment Form (https://docs.moyasar.com/guides/card-payments/basic-integration).
@@ -167,9 +168,11 @@ export function StepPayment({ variant }: { variant: 'sheet' | 'modal' }) {
               {FLOW.step3.loadError}
             </p>
           ) : null}
-          {/* Moyasar renders its own light form; give it a light card so it reads correctly. */}
+          {/* Moyasar's form, re-skinned in the flow's colours by moyasar-theme.css (styling only). */}
           <div
-            className={`rounded-2xl bg-white p-4 text-[#111] ${status === 'ready' ? '' : 'hidden'}`}
+            className={`mpf-theme rounded-2xl border p-4 text-white ${
+              isModal ? 'border-modal-tile-line bg-modal-tile' : 'mpf-theme--sheet border-line bg-card'
+            } ${status === 'ready' ? '' : 'hidden'}`}
             dir="rtl"
           >
             <div ref={hostRef} className={formClass} />

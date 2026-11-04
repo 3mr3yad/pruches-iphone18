@@ -3,7 +3,18 @@
 import { useMemo } from 'react';
 import { motion } from 'motion/react';
 import { EASE } from '@/lib/motion';
-import { FINISHES, FLOW, FULFILLMENTS, PICKUP_DAYS_SHOWN, RIYAL, finishIdFor } from '@/lib/content';
+import {
+  FINISHES,
+  FLOW,
+  FULFILLMENTS,
+  PICKUP_DAYS_SHOWN,
+  PICKUP_TIMES,
+  RIYAL,
+  SHIPPING_FEE,
+  branchLocationFor,
+  finishIdFor,
+  isRiyadh,
+} from '@/lib/content';
 import { formatHalalas, upcomingPickupDays } from '@/lib/format';
 import { usePurchaseFlow, type FieldKey } from '@/hooks/usePurchaseFlow';
 import { useMotionPrefs } from '@/hooks/useMotionPrefs';
@@ -96,6 +107,7 @@ export function StepColorStorage({ variant }: { variant: Variant }) {
     setStorage,
     method,
     setField,
+    storageOptions,
   } = usePurchaseFlow();
   const activeFulfillment = FULFILLMENTS.find((item) => item.id === method) ?? FULFILLMENTS[1];
   const isModal = variant === 'modal';
@@ -172,27 +184,48 @@ export function StepColorStorage({ variant }: { variant: Variant }) {
         <div
           role="radiogroup"
           aria-label={FLOW.step1.storageLabel}
-          className="grid w-full grid-cols-3 gap-2.5 md:gap-3"
+          className={`grid w-full gap-2.5 md:gap-3 ${isModal ? 'grid-cols-4' : 'grid-cols-2'}`}
         >
-          {storages.map((label) => {
-            const isSelected = label === activeStorage;
+          {storageOptions.map((option) => {
+            const isSelected = option.available && option.label === activeStorage;
+            const priceText = `${formatHalalas(option.price)} ${RIYAL}`;
             return (
               <OptionTile
-                key={label}
+                key={option.label}
                 selected={isSelected}
-                onSelect={() => setStorage(label)}
-                label={label}
+                disabled={!option.available}
+                onSelect={() => setStorage(option.label)}
+                label={
+                  option.available
+                    ? `${option.label} · ${priceText}`
+                    : `${option.label} · ${FLOW.step1.unavailable} · ${priceText}`
+                }
                 variant={variant}
-                className="h-[52px] gap-2.5 md:h-[50px]"
+                className="h-[58px] flex-col gap-0.5 px-1"
               >
+                <span className="flex items-center gap-1.5">
+                  <span
+                    className={`font-latin text-[15px] md:text-base ${
+                      isSelected ? 'text-white md:text-pink' : 'text-body md:text-white'
+                    }`}
+                  >
+                    <bdi>{option.label}</bdi>
+                  </span>
+                  {isSelected && isModal ? <Check className="text-pink" /> : null}
+                </span>
                 <span
-                  className={`font-latin text-[15px] md:text-[17px] ${
-                    isSelected ? 'text-white md:text-pink' : 'text-body md:text-white'
+                  className={`text-[10.5px] leading-tight md:text-[11px] ${
+                    option.available ? (isSelected ? 'text-pink' : 'text-body') : 'text-muted'
                   }`}
                 >
-                  <bdi>{label}</bdi>
+                  {option.available ? (
+                    priceText
+                  ) : (
+                    <>
+                      {FLOW.step1.unavailable} · {priceText}
+                    </>
+                  )}
                 </span>
-                {isSelected && isModal ? <Check className="text-pink" /> : null}
               </OptionTile>
             );
           })}
@@ -242,7 +275,7 @@ export function StepColorStorage({ variant }: { variant: Variant }) {
             isModal ? 'text-[11px] leading-[1.5]' : 'text-[12.5px]'
           }`}
         >
-          {FLOW.step1.fulfillmentNote}
+          {FLOW.step1.fulfillmentNotes[method]}
         </p>
       </div>
 
@@ -260,12 +293,29 @@ export function StepColorStorage({ variant }: { variant: Variant }) {
               <AnimatedValue value={`${price} ${RIYAL}`} className="text-[15px] font-bold text-pink" />
             </div>
           </div>
+          <div className="-mt-2 flex w-full items-center justify-between text-[13px]">
+            <p className="text-modal-body">{FLOW.step1.shippingLine}</p>
+            <AnimatedValue
+              value={method === 'shipping' ? `+ ${formatHalalas(SHIPPING_FEE)} ${RIYAL}` : FLOW.step1.shippingFree}
+              className="text-white"
+            />
+          </div>
         </div>
       ) : (
         <div className="flex w-full items-center justify-between rounded-2xl border border-line bg-card px-4 py-3.5">
-          <div className="flex items-center gap-1 text-[13px] text-body">
-            <span>اختيارك: {activeColor?.label} ·</span>
-            <AnimatedValue value={activeStorage ?? ''} className="font-latin" />
+          <div className="flex flex-col items-start gap-0.5">
+            <div className="flex items-center gap-1 text-[13px] text-body">
+              <span>اختيارك: {activeColor?.label} ·</span>
+              <AnimatedValue value={activeStorage ?? ''} className="font-latin" />
+            </div>
+            <AnimatedValue
+              value={
+                method === 'shipping'
+                  ? `${FLOW.step1.shippingLine} + ${formatHalalas(SHIPPING_FEE)} ${RIYAL}`
+                  : FLOW.step1.shippingFree
+              }
+              className="text-[11.5px] text-muted"
+            />
           </div>
           <AnimatedValue value={`${price} ${RIYAL}`} className="text-xl font-extrabold text-white" />
         </div>
@@ -346,11 +396,14 @@ function OrderError({ error }: { error: string | null }) {
  * order API requires (shipping is Saudi-only, +966).
  */
 export function StepShipping({ variant }: { variant: Variant }) {
-  const { error } = usePurchaseFlow();
+  const { error, city } = usePurchaseFlow();
   const isModal = variant === 'modal';
 
   return (
     <div className={`flex w-full flex-col ${isModal ? 'gap-3' : 'gap-3.5'}`}>
+      <InfoNote variant={variant}>
+        {isRiyadh(city) ? FLOW.shipping.riyadhNote : FLOW.shipping.deliveryNote}
+      </InfoNote>
       <FlowField field="email" variant={variant} />
       <FlowField field="name" variant={variant} />
       <div className={`grid grid-cols-2 gap-3`}>
@@ -366,13 +419,41 @@ export function StepShipping({ variant }: { variant: Variant }) {
 
 /* --------------------------- step 2 · branch pickup ------------------------ */
 
+const PinIcon = () => (
+  <svg viewBox="0 0 14 16" width={12} height={14} aria-hidden>
+    <path
+      d="M7 15s5-4.6 5-8.5A5 5 0 0 0 2 6.5C2 10.4 7 15 7 15z"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinejoin="round"
+    />
+    <circle cx="7" cy="6.5" r="1.8" fill="currentColor" />
+  </svg>
+);
+
+/** A one-line info strip above a step's fields. */
+function InfoNote({ variant, children }: { variant: Variant; children: React.ReactNode }) {
+  return (
+    <p
+      className={`w-full rounded-xl border px-3.5 py-2.5 text-start text-xs leading-[1.6] text-body ${
+        variant === 'modal' ? 'border-modal-tile-line bg-modal-tile' : 'border-line-2 bg-card'
+      }`}
+    >
+      {children}
+    </p>
+  );
+}
+
 function SectionError({ show }: { show: boolean }) {
   return show ? <span className="text-xs font-semibold text-pink">مطلوب</span> : null;
 }
 
 export function StepPickup({ variant }: { variant: Variant }) {
-  const { branchId, pickupDate, branches, branchesStatus, fieldErrors, setField, error } =
+  const { branchId, pickupDate, pickupTime, branches, branchesStatus, fieldErrors, setField, error } =
     usePurchaseFlow();
+  const selectedBranch = branches.find((branch) => branch.id === branchId) ?? null;
+  const selectedLocation = selectedBranch ? branchLocationFor(selectedBranch.name_ar) : null;
   const isModal = variant === 'modal';
   const days = useMemo(() => upcomingPickupDays(PICKUP_DAYS_SHOWN), []);
 
@@ -399,7 +480,8 @@ export function StepPickup({ variant }: { variant: Variant }) {
           <div role="radiogroup" aria-label={FLOW.step2.branchLabel} className="flex flex-col gap-2.5">
             {branches.map((branch) => {
               const isSelected = branch.id === branchId;
-              const detail = [branch.city, branch.address].filter(Boolean).join(' · ');
+              const location = branchLocationFor(branch.name_ar);
+              const detail = branch.address || location?.address || branch.city || '';
               return (
                 <OptionTile
                   key={branch.id}
@@ -425,6 +507,17 @@ export function StepPickup({ variant }: { variant: Variant }) {
             })}
           </div>
         )}
+        {selectedLocation ? (
+          <a
+            href={selectedLocation.mapUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 self-start text-xs font-semibold text-pink underline-offset-4 hover:underline"
+          >
+            <PinIcon />
+            {FLOW.step2.mapLink}
+          </a>
+        ) : null}
       </div>
 
       {/* Day */}
@@ -465,6 +558,44 @@ export function StepPickup({ variant }: { variant: Variant }) {
                 <span className={`text-[11px] md:text-xs ${isSelected ? 'text-pink' : 'text-muted'}`}>
                   {day.date}
                 </span>
+              </OptionTile>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Time — the API's pickup_time */}
+      <div className="flex flex-col gap-2.5">
+        <div className="flex w-full items-center justify-between">
+          <p className={isModal ? 'text-base font-bold text-white' : 'text-sm font-bold text-white'}>
+            {FLOW.step2.timeLabel}
+          </p>
+          {fieldErrors.pickupTime ? (
+            <SectionError show />
+          ) : (
+            <p className={isModal ? 'text-sm text-pink' : 'text-xs text-body'}>{FLOW.step2.timeHint}</p>
+          )}
+        </div>
+        <div role="radiogroup" aria-label={FLOW.step2.timeLabel} className="grid w-full grid-cols-2 gap-2.5">
+          {PICKUP_TIMES.map((slot) => {
+            const isSelected = slot.id === pickupTime;
+            return (
+              <OptionTile
+                key={slot.id}
+                selected={isSelected}
+                onSelect={() => setField({ pickupTime: slot.id })}
+                label={slot.range}
+                variant={variant}
+                className="h-12 gap-2 px-2"
+              >
+                <span
+                  className={`text-[13px] font-bold md:text-[14px] ${
+                    isSelected ? 'text-white md:text-pink' : 'text-body md:text-white'
+                  }`}
+                >
+                  {slot.range}
+                </span>
+                {isSelected && isModal ? <Check className="text-pink" /> : null}
               </OptionTile>
             );
           })}

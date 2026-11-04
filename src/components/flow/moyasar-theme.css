@@ -1,0 +1,237 @@
+/*
+ * Dark theme for Moyasar's payment form (mpf 1.14.0), in the purchase flow's
+ * own colours. Styling only — Moyasar still renders, validates and submits
+ * the form exactly as before.
+ *
+ * Moyasar scopes its rules as
+ *   #mysr-form-form-el#mysr-form-form-el#mysr-form-form-el.mysr-form-moyasarForm[payment-form=true] …
+ * so every rule here repeats that chain under `.mpf-theme` to outrank it.
+ * Where Moyasar uses !important, so do we (specificity then decides).
+ *
+ * If Moyasar's version (Payment.tsx → MPF_VERSION) changes, re-check these
+ * selectors against the new moyasar.css.
+ */
+
+.mpf-theme {
+  --mpf-pink: #f0acd7;
+  --mpf-pink-hover: #f5c0e1;
+  --mpf-on-pink: #100c10;
+  --mpf-text: #ffffff;
+  --mpf-body: #b9b6b9;
+  --mpf-muted: #8e848e;
+  --mpf-error: #f5a3a3;
+  --mpf-field: #100c10;
+  --mpf-line: #30252e;
+  --mpf-line-hover: #4a3a46;
+  --mpf-radius: 14px;
+}
+
+.mpf-theme--sheet {
+  --mpf-field: #0b0b0c;
+  --mpf-line: #2a2a2d;
+  --mpf-line-hover: #3a3a3e;
+}
+
+/* Fill the card instead of Moyasar's centred 340px column. */
+.mpf-theme #mysr-form-form-el#mysr-form-form-el#mysr-form-form-el.mysr-form-moyasarForm.mysr-form-fixedWidth,
+.mpf-theme .mysr-form-fixedWidth {
+  max-width: 100% !important;
+}
+
+/* ---------------------------------- labels --------------------------------- */
+
+.mpf-theme #mysr-form-form-el#mysr-form-form-el#mysr-form-form-el.mysr-form-moyasarForm[payment-form='true'] .mysr-form-label,
+.mpf-theme #mysr-form-form-el#mysr-form-form-el#mysr-form-form-el.mysr-form-moyasarForm[payment-form='true'] label.mysr-form-label {
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--mpf-text) !important;
+}
+
+.mpf-theme #mysr-form-form-el#mysr-form-form-el#mysr-form-form-el.mysr-form-moyasarForm[payment-form='true'] .mysr-form-labelGroup {
+  margin-bottom: 8px;
+}
+
+.mpf-theme #mysr-form-form-el#mysr-form-form-el#mysr-form-form-el.mysr-form-moyasarForm[payment-form='true'] .mysr-form-requiredAlert,
+.mpf-theme #mysr-form-form-el#mysr-form-form-el#mysr-form-form-el.mysr-form-moyasarForm[payment-form='true'] .mysr-form-alertDanger {
+  color: var(--mpf-error);
+  font-family: inherit;
+}
+
+.mpf-theme #mysr-form-form-el#mysr-form-form-el#mysr-form-form-el.mysr-form-moyasarForm[payment-form='true'] .mysr-form-inputAlert {
+  font-family: inherit;
+  font-size: 12px;
+  margin-top: 6px;
+}
+
+/* ---------------------------------- inputs --------------------------------- */
+
+.mpf-theme #mysr-form-form-el#mysr-form-form-el#mysr-form-form-el.mysr-form-moyasarForm[payment-form='true'] input.mysr-form-input,
+.mpf-theme #mysr-form-form-el#mysr-form-form-el#mysr-form-form-el.mysr-form-moyasarForm[payment-form='true'] input.mysr-form-input[type='text'] {
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--mpf-text);
+  background-color: var(--mpf-field);
+  border-radius: var(--mpf-radius);
+  padding: 14px 16px !important;
+  box-shadow: 0 0 0 1px var(--mpf-line);
+  caret-color: var(--mpf-pink);
+  transition:
+    box-shadow 0.2s ease,
+    background-color 0.2s ease;
+}
+
+.mpf-theme #mysr-form-form-el#mysr-form-form-el#mysr-form-form-el.mysr-form-moyasarForm[payment-form='true'] input.mysr-form-input::placeholder {
+  color: var(--mpf-muted);
+  opacity: 1;
+}
+
+.mpf-theme #mysr-form-form-el#mysr-form-form-el#mysr-form-form-el.mysr-form-moyasarForm[payment-form='true'] input.mysr-form-input:hover,
+.mpf-theme #mysr-form-form-el#mysr-form-form-el#mysr-form-form-el.mysr-form-moyasarForm[payment-form='true'] input.mysr-form-input[type='text']:hover {
+  box-shadow: 0 0 0 1px var(--mpf-line-hover);
+}
+
+.mpf-theme #mysr-form-form-el#mysr-form-form-el#mysr-form-form-el.mysr-form-moyasarForm[payment-form='true'] input.mysr-form-input:focus,
+.mpf-theme #mysr-form-form-el#mysr-form-form-el#mysr-form-form-el.mysr-form-moyasarForm[payment-form='true'] input.mysr-form-input[type='text']:focus,
+.mpf-theme #mysr-form-form-el#mysr-form-form-el#mysr-form-form-el.mysr-form-moyasarForm[payment-form='true'] input.mysr-form-input:focus.mysr-form-input:hover,
+.mpf-theme #mysr-form-form-el#mysr-form-form-el#mysr-form-form-el.mysr-form-moyasarForm[payment-form='true'] input.mysr-form-input[type='text']:focus.mysr-form-input[type='text']:hover {
+  box-shadow:
+    0 0 0 1px var(--mpf-pink),
+    0 0 0 4px rgba(240, 172, 215, 0.18);
+}
+
+.mpf-theme #mysr-form-form-el#mysr-form-form-el#mysr-form-form-el.mysr-form-moyasarForm[payment-form='true'] input.mysr-form-input.mysr-form-inputError,
+.mpf-theme #mysr-form-form-el#mysr-form-form-el#mysr-form-form-el.mysr-form-moyasarForm[payment-form='true'] input.mysr-form-inputError[type='text'],
+.mpf-theme #mysr-form-form-el#mysr-form-form-el#mysr-form-form-el.mysr-form-moyasarForm[payment-form='true'] input.mysr-form-inputError:hover,
+.mpf-theme #mysr-form-form-el#mysr-form-form-el#mysr-form-form-el.mysr-form-moyasarForm[payment-form='true'] input.mysr-form-inputError[type='text']:hover {
+  color: var(--mpf-error);
+  box-shadow: 0 0 0 1px rgba(245, 163, 163, 0.7);
+}
+
+.mpf-theme #mysr-form-form-el#mysr-form-form-el#mysr-form-form-el.mysr-form-moyasarForm[payment-form='true'] input.mysr-form-input:disabled,
+.mpf-theme #mysr-form-form-el#mysr-form-form-el#mysr-form-form-el.mysr-form-moyasarForm[payment-form='true'] input.mysr-form-input[type='text']:disabled {
+  background-color: rgba(255, 255, 255, 0.04);
+  color: var(--mpf-muted);
+}
+
+/* Browser autofill would otherwise paint the fields light yellow. */
+.mpf-theme input.mysr-form-input:-webkit-autofill,
+.mpf-theme input.mysr-form-input:-webkit-autofill:hover,
+.mpf-theme input.mysr-form-input:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--mpf-text);
+  -webkit-box-shadow:
+    0 0 0 1px var(--mpf-line),
+    inset 0 0 0 1000px var(--mpf-field);
+  transition: background-color 9999s ease-out 0s;
+}
+
+/* The joined card-number / expiry / CVC block keeps its square inner corners. */
+.mpf-theme #mysr-form-form-el#mysr-form-form-el#mysr-form-form-el.mysr-form-moyasarForm[payment-form='true'] input.mysr-form-input.mysr-form-topLeftRadius0 {
+  border-top-left-radius: 0;
+}
+.mpf-theme #mysr-form-form-el#mysr-form-form-el#mysr-form-form-el.mysr-form-moyasarForm[payment-form='true'] input.mysr-form-input.mysr-form-topRightRadius0 {
+  border-top-right-radius: 0;
+}
+.mpf-theme #mysr-form-form-el#mysr-form-form-el#mysr-form-form-el.mysr-form-moyasarForm[payment-form='true'] input.mysr-form-input.mysr-form-bottomLeftRadius0 {
+  border-bottom-left-radius: 0;
+}
+.mpf-theme #mysr-form-form-el#mysr-form-form-el#mysr-form-form-el.mysr-form-moyasarForm[payment-form='true'] input.mysr-form-input.mysr-form-bottomRightRadius0 {
+  border-bottom-right-radius: 0;
+}
+
+/* Card brand logos sit on light chips so they stay legible on the dark field. */
+.mpf-theme .mysr-form-ccIcon {
+  border-radius: 4px;
+  background-color: #ffffff;
+  background-size: 80%;
+}
+
+/* --------------------------------- pay button ------------------------------ */
+
+.mpf-theme #mysr-form-form-el#mysr-form-form-el#mysr-form-form-el.mysr-form-moyasarForm[payment-form='true'] .mysr-form-button {
+  margin-top: 6px;
+  min-height: 52px;
+  padding: 14px 16px !important;
+  border-radius: 9999px;
+  background-color: var(--mpf-pink);
+  color: var(--mpf-on-pink);
+  font-family: inherit;
+  font-size: 18px;
+  font-weight: 800;
+  box-shadow: 0 0 32px 0 rgba(227, 100, 182, 0.2);
+  transition:
+    background-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.mpf-theme #mysr-form-form-el#mysr-form-form-el#mysr-form-form-el.mysr-form-moyasarForm[payment-form='true'] .mysr-form-button:hover {
+  background-color: var(--mpf-pink-hover);
+  color: var(--mpf-on-pink);
+  box-shadow: 0 0 36px 0 rgba(227, 100, 182, 0.32);
+}
+
+.mpf-theme #mysr-form-form-el#mysr-form-form-el#mysr-form-form-el.mysr-form-moyasarForm[payment-form='true'] .mysr-form-button:focus-visible {
+  outline: 2px solid var(--mpf-pink);
+  outline-offset: 3px;
+}
+
+/* While paying: a dimmer pink with the spinner in the button-text colour. */
+.mpf-theme #mysr-form-form-el#mysr-form-form-el#mysr-form-form-el.mysr-form-moyasarForm[payment-form='true'] .mysr-form-button.mysr-form-busy,
+.mpf-theme #mysr-form-form-el#mysr-form-form-el#mysr-form-form-el.mysr-form-moyasarForm[payment-form='true'] .mysr-form-button.mysr-form-busy:hover {
+  background-color: rgba(240, 172, 215, 0.6);
+  color: var(--mpf-on-pink);
+  box-shadow: none;
+}
+
+.mpf-theme .mysr-form-button .mysr-form-indicator {
+  filter: none;
+}
+
+.mpf-theme .mysr-form-button .mysr-form-indicator circle,
+.mpf-theme .mysr-form-button .mysr-form-indicator path {
+  stroke: var(--mpf-on-pink);
+}
+
+/* Moyasar's own success / failure flashes keep their meaning, in softer tones. */
+.mpf-theme #mysr-form-form-el#mysr-form-form-el#mysr-form-form-el.mysr-form-moyasarForm[payment-form='true'] .mysr-form-button.mysr-form-fail,
+.mpf-theme #mysr-form-form-el#mysr-form-form-el#mysr-form-form-el.mysr-form-moyasarForm[payment-form='true'] .mysr-form-button.mysr-form-fail:hover {
+  background-color: #e36b6b;
+  color: #ffffff;
+}
+
+.mpf-theme #mysr-form-form-el#mysr-form-form-el#mysr-form-form-el.mysr-form-moyasarForm[payment-form='true'] .mysr-form-button.mysr-form-success,
+.mpf-theme #mysr-form-form-el#mysr-form-form-el#mysr-form-form-el.mysr-form-moyasarForm[payment-form='true'] .mysr-form-button.mysr-form-success:hover {
+  background-color: #3fbf73;
+  color: #ffffff;
+}
+
+/* ----------------------------------- footer -------------------------------- */
+
+.mpf-theme #mysr-form-form-el#mysr-form-form-el#mysr-form-form-el.mysr-form-moyasarForm[payment-form='true'] div.mysr-form-footer {
+  margin-top: 14px;
+  margin-bottom: 0;
+  text-align: center;
+}
+
+.mpf-theme #mysr-form-form-el#mysr-form-form-el#mysr-form-form-el.mysr-form-moyasarForm[payment-form='true'] div.mysr-form-footer a {
+  font-family: inherit;
+  color: var(--mpf-muted);
+}
+
+.mpf-theme #mysr-form-form-el#mysr-form-form-el#mysr-form-form-el.mysr-form-moyasarForm[payment-form='true'] div.mysr-form-footer a strong {
+  color: var(--mpf-body);
+}
+
+/* Moyasar's test-mode warning. */
+.mpf-theme #mysr-form-form-el#mysr-form-form-el#mysr-form-form-el.mysr-form-moyasarForm[payment-form='true'] div.mysr-form-footer span {
+  margin-top: 8px;
+  font-family: inherit;
+  font-size: 11.5px;
+  color: var(--mpf-error);
+}
+
+/* Moyasar sets its own system font on inner elements; keep the site's Cairo. */
+.mpf-theme .mysr-form-moyasarForm *:not(svg):not(path):not(circle) {
+  font-family: inherit !important;
+}

@@ -22,7 +22,7 @@ import {
   type FulfillmentMethod,
   type Variant,
 } from '@/lib/api';
-import { FLOW, finishIdFor } from '@/lib/content';
+import { FLOW, STORAGE_TIERS, finishIdFor, type PickupTimeId } from '@/lib/content';
 import { normalizePhone } from '@/lib/format';
 import type { CountryCode } from 'libphonenumber-js/min';
 
@@ -31,11 +31,15 @@ export type LoadStatus = 'loading' | 'ready' | 'error';
 
 export type ColorOption = { key: string; label: string };
 
+/** A storage tile: sellable tiers carry the API price, the rest Apple's official price. */
+export type StorageOption = { label: string; price: number; available: boolean };
+
 type Form = {
   method: FulfillmentMethod;
   email: string;
   branchId: number | null;
   pickupDate: string | null;
+  pickupTime: PickupTimeId | null;
   city: string;
   district: string;
   nationalAddress: string;
@@ -87,6 +91,7 @@ const initialState: State = {
   email: '',
   branchId: null,
   pickupDate: null,
+  pickupTime: null,
   city: '',
   district: '',
   nationalAddress: '',
@@ -173,7 +178,8 @@ export type FieldKey =
   | 'district'
   | 'nationalAddress'
   | 'branchId'
-  | 'pickupDate';
+  | 'pickupDate'
+  | 'pickupTime';
 
 export type FieldErrors = Partial<Record<FieldKey, string>>;
 
@@ -188,6 +194,7 @@ function validate(state: State): { errors: FieldErrors; phone: string | null } {
   if (state.method === 'pickup') {
     if (!state.branchId) errors.branchId = FLOW.step2.branchLabel;
     if (!state.pickupDate) errors.pickupDate = FLOW.step2.dayLabel;
+    if (!state.pickupTime) errors.pickupTime = FLOW.step2.timeLabel;
   } else {
     if (!state.city.trim()) errors.city = FLOW.fields.city.error;
     if (!state.district.trim()) errors.district = FLOW.fields.district.error;
@@ -215,6 +222,8 @@ type FlowApi = State & {
   colors: ColorOption[];
   activeColor: ColorOption | null;
   storages: string[];
+  /** Every Pro Max tier for the active colour, sellable or not. */
+  storageOptions: StorageOption[];
   activeStorage: string | null;
   variant: Variant | null;
   fieldErrors: FieldErrors;
@@ -303,6 +312,22 @@ export function PurchaseFlowProvider({ children }: { children: ReactNode }) {
   );
   const activeStorage =
     state.storage && storages.includes(state.storage) ? state.storage : (storages[0] ?? null);
+  const storageOptions = useMemo<StorageOption[]>(() => {
+    if (!activeColor) return [];
+    const priceOf = (label: string) =>
+      variants.find((v) => v.color === activeColor.key && v.storage_label === label)?.price;
+    const tiers = STORAGE_TIERS.map(({ label, officialPrice }) => {
+      const price = priceOf(label);
+      return price === undefined
+        ? { label, price: officialPrice, available: false }
+        : { label, price, available: true };
+    });
+    // Any size the API sells that isn't a known tier still gets a tile.
+    const extra = storages
+      .filter((label) => !STORAGE_TIERS.some((tier) => tier.label === label))
+      .map((label) => ({ label, price: priceOf(label) ?? 0, available: true }));
+    return [...tiers, ...extra];
+  }, [variants, activeColor, storages]);
   const variant =
     variants.find((v) => v.color === activeColor?.key && v.storage_label === activeStorage) ?? null;
 
@@ -336,6 +361,7 @@ export function PurchaseFlowProvider({ children }: { children: ReactNode }) {
             fulfillment_method: 'pickup',
             branch_id: state.branchId as number,
             pickup_date: state.pickupDate as string,
+            pickup_time: state.pickupTime as string,
           }
         : {
             ...base,
@@ -387,6 +413,7 @@ export function PurchaseFlowProvider({ children }: { children: ReactNode }) {
       colors,
       activeColor,
       storages,
+      storageOptions,
       activeStorage,
       variant,
       fieldErrors,
@@ -412,6 +439,7 @@ export function PurchaseFlowProvider({ children }: { children: ReactNode }) {
       colors,
       activeColor,
       storages,
+      storageOptions,
       activeStorage,
       variant,
       fieldErrors,
