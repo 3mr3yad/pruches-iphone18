@@ -1,0 +1,207 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --bg: #000000;
+    --surface: #0b0b0c;
+    --card: #111112;
+    --line: #1f1f21;
+    --line-2: #2a2a2d;
+    --pink: #f0acd7;
+    --on-pink: #100c10;
+    --plum: #291520;
+    --plum-2: #4a2236;
+    --text: #ffffff;
+    --body: #b9b6b9;
+    --muted: #8e848e;
+    --header-h: 60px;
+  }
+
+  @media (min-width: 1024px) {
+    :root {
+      --header-h: 84px;
+    }
+  }
+
+  html {
+    background-color: var(--bg);
+    /* Anchor links land below the fixed header. */
+    scroll-padding-top: var(--header-h);
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+  }
+
+  body {
+    background-color: var(--bg);
+    color: var(--text);
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* Arabic numerals inside Latin runs should not reverse. */
+  bdi {
+    unicode-bidi: isolate;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--pink);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  button,
+  a {
+    -webkit-tap-highlight-color: transparent;
+  }
+}
+
+@layer components {
+  /*
+   * The phone layout runs until the desktop one takes over at 1024px, so on
+   * tablets it would otherwise stretch edge to edge — 900px-wide pill buttons
+   * and 100-character lines. This caps it to a readable centred column and
+   * releases the cap once the desktop layout is in play.
+   */
+  .mobile-col {
+    margin-inline: auto;
+    width: 100%;
+    max-width: 600px;
+  }
+
+  @media (min-width: 1024px) {
+    .mobile-col {
+      max-width: none;
+    }
+  }
+
+  /* Outlined display text — «فتحة عدسة واحدة.» */
+  .text-outline {
+    color: transparent;
+    -webkit-text-stroke: 1.5px rgba(255, 255, 255, 0.45);
+    paint-order: stroke fill;
+  }
+
+  @media (min-width: 1024px) {
+    .text-outline {
+      -webkit-text-stroke-width: 2px;
+    }
+  }
+
+  /* Plum radial glow behind the hero product, matching the Figma gradients. */
+  .glow-hero {
+    background: radial-gradient(
+      closest-side,
+      rgba(149, 89, 120, 0.32) 0%,
+      rgba(75, 45, 60, 0.16) 50%,
+      rgba(0, 0, 0, 0) 100%
+    );
+  }
+
+  .glow-hero-desktop {
+    background: radial-gradient(
+      closest-side,
+      rgba(74, 32, 59, 1) 0%,
+      rgba(42, 21, 35, 1) 50%,
+      rgba(25, 15, 22, 1) 75%,
+      rgba(9, 9, 10, 1) 100%
+    );
+  }
+
+  .glow-aperture {
+    background: radial-gradient(
+      closest-side,
+      rgba(120, 52, 79, 0.35) 0%,
+      rgba(60, 26, 40, 0.175) 50%,
+      rgba(0, 0, 0, 0) 100%
+    );
+  }
+
+  /*
+   * Figma 463:614 — radialGradient r=10 with matrix(72 0 0 -69 720 690),
+   * i.e. an ellipse of radii 720x690 centred on the bottom edge. The radii
+   * have to be explicit: `closest-side` with the centre on an edge resolves
+   * the vertical radius to 0 and the gradient disappears entirely.
+   */
+  .glow-final {
+    background: radial-gradient(
+      720px 690px at 50% 100%,
+      rgba(72, 18, 28, 1) 0%,
+      rgba(36, 9, 14, 1) 50%,
+      rgba(18, 5, 7, 1) 75%,
+      rgba(9, 2, 4, 1) 87.5%,
+      rgba(0, 0, 0, 1) 100%
+    );
+  }
+
+  .glow-final-mobile {
+    background: radial-gradient(
+      closest-side,
+      rgba(149, 89, 120, 0.4) 0%,
+      rgba(75, 45, 60, 0.2) 50%,
+      rgba(0, 0, 0, 0) 100%
+    );
+  }
+
+  /*
+   * These two run from CSS classes that are always emitted, so reduced motion
+   * is honoured here rather than by swapping classNames at render time —
+   * swapping would differ between the server and the first client render.
+   */
+  @media (prefers-reduced-motion: reduce) {
+    .animate-glow-pulse,
+    .animate-sweep {
+      animation: none !important;
+    }
+
+    .animate-sweep {
+      opacity: 0;
+    }
+  }
+
+  /* Accessory icons draw their strokes once their card scrolls into view. */
+  .draw-icon :is(path, circle, rect, line, polyline) {
+    stroke-dasharray: 240;
+    stroke-dashoffset: 240;
+  }
+
+  .draw-icon.is-drawn :is(path, circle, rect, line, polyline) {
+    animation: icon-draw 0.9s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  }
+
+  @keyframes icon-draw {
+    to {
+      stroke-dashoffset: 0;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .draw-icon :is(path, circle, rect, line, polyline) {
+      stroke-dashoffset: 0;
+      animation: none;
+    }
+  }
+
+  /* Wafi price card: pink gradient border with a slow light sweep. */
+  .wafi-card {
+    background-image: linear-gradient(136.5deg, #4a2236 14.286%, #1a0f15 64.286%);
+  }
+
+  @media (min-width: 1024px) {
+    .wafi-card-desktop {
+      background-image: linear-gradient(
+        148.7deg,
+        rgba(183, 124, 153, 0.38) 0%,
+        rgba(17, 17, 18, 0.922) 60%
+      );
+    }
+  }
+}
