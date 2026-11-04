@@ -4,6 +4,11 @@
 
 @layer base {
   :root {
+    /* Font families come from the @fontsource imports in app/layout.tsx. */
+    --font-cairo: 'Cairo';
+    --font-changa: 'Changa';
+    --font-anton: 'Anton';
+    --font-poppins: 'Poppins';
     --bg: #000000;
     --surface: #0b0b0c;
     --card: #111112;
