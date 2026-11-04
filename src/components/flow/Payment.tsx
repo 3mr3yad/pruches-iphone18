@@ -20,16 +20,25 @@ const MPF_CSS = `https://cdn.moyasar.com/mpf/${MPF_VERSION}/moyasar.css`;
 
 /**
  * Publishable keys are public by design (they can only create payments), so a
- * default lives here. Override per environment with the env var, e.g. pk_live_… in production.
- * Never put the secret key (sk_…) in this site.
+ * default lives here: the LIVE key, so production charges real cards.
+ * For local testing put the test key in .env.local (git-ignored):
+ *   NEXT_PUBLIC_MOYASAR_PUBLISHABLE_KEY=pk_test_…
+ * Never put the secret key (sk_…) in this site — it belongs on the backend only.
  */
-const DEFAULT_PUBLISHABLE_KEY = 'pk_test_3PaoEYfbnGvr5Lu823meRuXb1nBMhCXndx58BEaE';
+const DEFAULT_PUBLISHABLE_KEY = 'pk_live_C331tnRE2myosC83BCLuB1e8qBsDvnHyRZzE3cXH';
 const PUBLISHABLE_KEY =
   process.env.NEXT_PUBLIC_MOYASAR_PUBLISHABLE_KEY || DEFAULT_PUBLISHABLE_KEY;
 const METHODS = (process.env.NEXT_PUBLIC_MOYASAR_METHODS ?? 'creditcard')
   .split(',')
   .map((method) => method.trim())
   .filter(Boolean);
+
+/**
+ * ⚠️ TEMPORARY — live payment test. While set, Moyasar charges this amount
+ * (halalas: 100 = 1 SAR) instead of the order's amount. Set back to `null`
+ * after the test to charge the real order amount again.
+ */
+const TEST_CHARGE_HALALAS: number | null = 100;
 
 /** Query param carrying the order number back from Moyasar's redirect. */
 export const ORDER_PARAM = 'order';
@@ -98,7 +107,7 @@ export function StepPayment({ variant }: { variant: 'sheet' | 'modal' }) {
 
         window.Moyasar.init({
           element: `.${formClass}`,
-          amount: order.amount,
+          amount: TEST_CHARGE_HALALAS ?? order.amount,
           currency: order.currency || 'SAR',
           description,
           publishable_api_key: PUBLISHABLE_KEY,
@@ -146,7 +155,7 @@ export function StepPayment({ variant }: { variant: 'sheet' | 'modal' }) {
         <div className="flex items-center justify-between">
           <span className="text-sm text-body">{FLOW.step3.totalLabel}</span>
           <span className="text-xl font-extrabold text-white">
-            {formatHalalas(order.amount)} {RIYAL}
+            {formatHalalas(TEST_CHARGE_HALALAS ?? order.amount)} {RIYAL}
           </span>
         </div>
       </div>
