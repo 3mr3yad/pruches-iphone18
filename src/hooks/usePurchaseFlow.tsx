@@ -22,7 +22,16 @@ import {
   type FulfillmentMethod,
   type Variant,
 } from '@/lib/api';
-import { FINISHES, FLOW, STORAGE_TIERS, finishIdFor, type PickupTimeId } from '@/lib/content';
+import {
+  BRANCH_LOCATIONS,
+  FINISHES,
+  FLOW,
+  STORAGE_TIERS,
+  branchDisplayName,
+  branchLocationFor,
+  finishIdFor,
+  type PickupTimeId,
+} from '@/lib/content';
 import { normalizePhone } from '@/lib/format';
 import type { CountryCode } from 'libphonenumber-js/min';
 
@@ -35,13 +44,26 @@ export type LoadStatus = 'loading' | 'ready' | 'error';
  */
 export type ColorOption = { key: string; label: string; dot: string | null; orderable: boolean };
 
+/**
+ * A pickup branch tile. Both Wafi branches are always offered; `apiId` is the
+ * order API's branch id, or null while the API doesn't list that branch yet.
+ */
+export type BranchOption = {
+  key: string;
+  apiId: number | null;
+  name: string;
+  address: string;
+  mapUrl: string | null;
+};
+
 /** A storage tile: sellable tiers carry the API price, the rest Apple's official price. */
 export type StorageOption = { label: string; price: number; available: boolean };
 
 type Form = {
   method: FulfillmentMethod;
   email: string;
-  branchId: number | null;
+  /** BranchOption.key of the chosen pickup branch. */
+  branchId: string | null;
   pickupDate: string | null;
   pickupTime: PickupTimeId | null;
   city: string;
@@ -231,6 +253,9 @@ type FlowApi = State & {
   variantsStatus: LoadStatus;
   branches: Branch[];
   branchesStatus: LoadStatus;
+  /** Both Wafi branches, plus any other branch the API lists. */
+  branchOptions: BranchOption[];
+  selectedBranch: BranchOption | null;
   reloadVariants: () => void;
   colors: ColorOption[];
   activeColor: ColorOption | null;
@@ -279,8 +304,6 @@ export function PurchaseFlowProvider({ children }: { children: ReactNode }) {
       .then((rows) => {
         setBranches(rows);
         setBranchesStatus('ready');
-        // With a single branch there is nothing to choose.
-        if (rows.length === 1) dispatch({ type: 'field', patch: { branchId: rows[0].id } });
       })
       .catch(() => setBranchesStatus('error'));
   }, []);
@@ -348,6 +371,30 @@ export function PurchaseFlowProvider({ children }: { children: ReactNode }) {
     variants.find((v) => v.storage_label === activeStorage) ??
     null;
 
+  const branchOptions = useMemo<BranchOption[]>(() => {
+    const known = BRANCH_LOCATIONS.map((location) => {
+      const api = branches.find((branch) => branch.name_ar.includes(location.match));
+      return {
+        key: location.match,
+        apiId: api?.id ?? null,
+        name: location.name,
+        address: api?.address || location.address,
+        mapUrl: location.mapUrl,
+      };
+    });
+    const extra = branches
+      .filter((branch) => !branchLocationFor(branch.name_ar))
+      .map((branch) => ({
+        key: `api-${branch.id}`,
+        apiId: branch.id,
+        name: branchDisplayName(branch.name_ar),
+        address: branch.address || branch.city || '',
+        mapUrl: null,
+      }));
+    return [...known, ...extra];
+  }, [branches]);
+  const selectedBranch = branchOptions.find((option) => option.key === state.branchId) ?? null;
+
   const { errors: allErrors, phone } = useMemo(() => validate(state), [state]);
   // A hint shows once its field has been left, or for every field after a submit attempt.
   const fieldErrors = useMemo(() => {
@@ -376,7 +423,10 @@ export function PurchaseFlowProvider({ children }: { children: ReactNode }) {
         ? {
             ...base,
             fulfillment_method: 'pickup',
-            branch_id: state.branchId as number,
+            // A branch the API doesn't list yet goes out on the first listed
+            // branch's id; the chosen branch still travels in the payment's
+            // description and metadata (see Payment.tsx).
+            branch_id: (selectedBranch?.apiId ?? branches[0]?.id) as number,
             pickup_date: state.pickupDate as string,
             pickup_time: state.pickupTime as string,
           }
@@ -402,7 +452,7 @@ export function PurchaseFlowProvider({ children }: { children: ReactNode }) {
     } catch (error) {
       dispatch({ type: 'failed', error: orderErrorMessage(error) });
     }
-  }, [variant, phone, state]);
+  }, [variant, phone, state, selectedBranch, branches]);
 
   const next = useCallback(() => {
     if (state.step === 1) {
@@ -426,6 +476,8 @@ export function PurchaseFlowProvider({ children }: { children: ReactNode }) {
       variantsStatus,
       branches,
       branchesStatus,
+      branchOptions,
+      selectedBranch,
       reloadVariants,
       colors,
       activeColor,
@@ -452,6 +504,8 @@ export function PurchaseFlowProvider({ children }: { children: ReactNode }) {
       variantsStatus,
       branches,
       branchesStatus,
+      branchOptions,
+      selectedBranch,
       reloadVariants,
       colors,
       activeColor,

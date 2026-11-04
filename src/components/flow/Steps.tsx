@@ -11,7 +11,6 @@ import {
   PICKUP_TIMES,
   RIYAL,
   SHIPPING_FEE,
-  branchLocationFor,
   finishIdFor,
   isRiyadh,
 } from '@/lib/content';
@@ -454,10 +453,18 @@ function SectionError({ show }: { show: boolean }) {
 }
 
 export function StepPickup({ variant }: { variant: Variant }) {
-  const { branchId, pickupDate, pickupTime, branches, branchesStatus, fieldErrors, setField, error } =
-    usePurchaseFlow();
-  const selectedBranch = branches.find((branch) => branch.id === branchId) ?? null;
-  const selectedLocation = selectedBranch ? branchLocationFor(selectedBranch.name_ar) : null;
+  const {
+    branchId,
+    pickupDate,
+    pickupTime,
+    branches,
+    branchesStatus,
+    branchOptions,
+    selectedBranch,
+    fieldErrors,
+    setField,
+    error,
+  } = usePurchaseFlow();
   const isModal = variant === 'modal';
   const days = useMemo(() => upcomingPickupDays(PICKUP_DAYS_SHOWN), []);
 
@@ -482,16 +489,15 @@ export function StepPickup({ variant }: { variant: Variant }) {
           <StatusBox variant={variant}>{FLOW.step2.noBranches}</StatusBox>
         ) : (
           <div role="radiogroup" aria-label={FLOW.step2.branchLabel} className="flex flex-col gap-2.5">
-            {branches.map((branch) => {
-              const isSelected = branch.id === branchId;
-              const location = branchLocationFor(branch.name_ar);
-              const detail = branch.address || location?.address || branch.city || '';
+            {branchOptions.map((branch) => {
+              const isSelected = branch.key === branchId;
+              const detail = branch.address;
               return (
                 <OptionTile
-                  key={branch.id}
+                  key={branch.key}
                   selected={isSelected}
-                  onSelect={() => setField({ branchId: branch.id })}
-                  label={branch.name_ar}
+                  onSelect={() => setField({ branchId: branch.key })}
+                  label={branch.name}
                   variant={variant}
                   className={`w-full justify-between gap-3 px-4 ${isModal ? 'min-h-12 py-2' : 'min-h-14 py-2.5'}`}
                 >
@@ -501,7 +507,7 @@ export function StepPickup({ variant }: { variant: Variant }) {
                         isSelected ? 'text-white md:text-pink' : 'text-white'
                       }`}
                     >
-                      {branch.name_ar}
+                      {branch.name}
                     </span>
                     {detail ? <span className="text-xs text-muted">{detail}</span> : null}
                   </span>
@@ -511,9 +517,9 @@ export function StepPickup({ variant }: { variant: Variant }) {
             })}
           </div>
         )}
-        {selectedLocation ? (
+        {selectedBranch?.mapUrl ? (
           <a
-            href={selectedLocation.mapUrl}
+            href={selectedBranch.mapUrl}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-1.5 self-start text-xs font-semibold text-pink underline-offset-4 hover:underline"

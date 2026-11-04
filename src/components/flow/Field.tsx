@@ -51,8 +51,8 @@ export function Field({
   const isModal = variant === 'modal';
 
   const shape = isModal
-    ? 'h-12 rounded-[14px] bg-modal-tile text-[15px]'
-    : 'h-[52px] rounded-2xl bg-card text-sm';
+    ? 'h-12 rounded-[14px] bg-modal-tile text-[15px] autofill-dark [--autofill-bg:#171116]'
+    : 'h-[52px] rounded-2xl bg-card text-sm autofill-dark [--autofill-bg:#111112]';
   const border = error ? 'border-pink/70' : isModal ? 'border-modal-tile-line' : 'border-line-2';
 
   return (

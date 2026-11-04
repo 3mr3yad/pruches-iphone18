@@ -115,15 +115,53 @@
   color: var(--mpf-muted);
 }
 
-/* Browser autofill would otherwise paint the fields light yellow. */
-.mpf-theme input.mysr-form-input:-webkit-autofill,
-.mpf-theme input.mysr-form-input:-webkit-autofill:hover,
-.mpf-theme input.mysr-form-input:-webkit-autofill:focus {
-  -webkit-text-fill-color: var(--mpf-text);
+/*
+ * Browser autofill (saved cards / names) paints the field light blue or
+ * yellow with an !important UA background that can't be overridden directly,
+ * and our white text vanishes on it. A huge inset shadow covers that
+ * background with the field colour; the text is forced back to white. The id
+ * chain is needed to outrank Moyasar's own box-shadow rules.
+ */
+.mpf-theme #mysr-form-form-el#mysr-form-form-el#mysr-form-form-el.mysr-form-moyasarForm[payment-form='true'] input.mysr-form-input:-webkit-autofill,
+.mpf-theme #mysr-form-form-el#mysr-form-form-el#mysr-form-form-el.mysr-form-moyasarForm[payment-form='true'] input.mysr-form-input:-webkit-autofill:hover,
+.mpf-theme #mysr-form-form-el#mysr-form-form-el#mysr-form-form-el.mysr-form-moyasarForm[payment-form='true'] input.mysr-form-input[type='text']:-webkit-autofill,
+.mpf-theme #mysr-form-form-el#mysr-form-form-el#mysr-form-form-el.mysr-form-moyasarForm[payment-form='true'] input.mysr-form-input[type='text']:-webkit-autofill:hover,
+.mpf-theme #mysr-form-form-el#mysr-form-form-el#mysr-form-form-el.mysr-form-moyasarForm[payment-form='true'] input.mysr-form-input:autofill {
+  -webkit-text-fill-color: var(--mpf-text) !important;
+  caret-color: var(--mpf-pink);
   -webkit-box-shadow:
     0 0 0 1px var(--mpf-line),
-    inset 0 0 0 1000px var(--mpf-field);
-  transition: background-color 9999s ease-out 0s;
+    inset 0 0 0 1000px var(--mpf-field) !important;
+  box-shadow:
+    0 0 0 1px var(--mpf-line),
+    inset 0 0 0 1000px var(--mpf-field) !important;
+  transition:
+    background-color 99999s ease-out 0s,
+    color 99999s ease-out 0s;
+}
+
+.mpf-theme #mysr-form-form-el#mysr-form-form-el#mysr-form-form-el.mysr-form-moyasarForm[payment-form='true'] input.mysr-form-input:-webkit-autofill:focus,
+.mpf-theme #mysr-form-form-el#mysr-form-form-el#mysr-form-form-el.mysr-form-moyasarForm[payment-form='true'] input.mysr-form-input[type='text']:-webkit-autofill:focus,
+.mpf-theme #mysr-form-form-el#mysr-form-form-el#mysr-form-form-el.mysr-form-moyasarForm[payment-form='true'] input.mysr-form-input:autofill:focus {
+  -webkit-box-shadow:
+    0 0 0 1px var(--mpf-pink),
+    0 0 0 4px rgba(240, 172, 215, 0.18),
+    inset 0 0 0 1000px var(--mpf-field) !important;
+  box-shadow:
+    0 0 0 1px var(--mpf-pink),
+    0 0 0 4px rgba(240, 172, 215, 0.18),
+    inset 0 0 0 1000px var(--mpf-field) !important;
+}
+
+/* An autofilled field Moyasar flags as invalid keeps its error tint. */
+.mpf-theme #mysr-form-form-el#mysr-form-form-el#mysr-form-form-el.mysr-form-moyasarForm[payment-form='true'] input.mysr-form-input.mysr-form-inputError:-webkit-autofill {
+  -webkit-text-fill-color: var(--mpf-error) !important;
+  -webkit-box-shadow:
+    0 0 0 1px rgba(245, 163, 163, 0.7),
+    inset 0 0 0 1000px var(--mpf-field) !important;
+  box-shadow:
+    0 0 0 1px rgba(245, 163, 163, 0.7),
+    inset 0 0 0 1000px var(--mpf-field) !important;
 }
 
 /* The joined card-number / expiry / CVC block keeps its square inner corners. */

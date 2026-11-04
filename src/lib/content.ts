@@ -372,8 +372,9 @@ export const PICKUP_TIMES = [
 export type PickupTimeId = (typeof PICKUP_TIMES)[number]['id'];
 
 /**
- * Street address and map link for each branch, matched on the API's
- * `name_ar` (the API's `address` is empty for now).
+ * Display name, street address and map link for each branch, matched on the
+ * API's `name_ar`. The page shows `name` rather than the API's label (which
+ * still carries «(تجريبي)»), and the API's `address` is empty for now.
  */
 export const BRANCH_LOCATIONS: { match: string; name: string; address: string; mapUrl: string }[] = [
   {
@@ -386,14 +387,20 @@ export const BRANCH_LOCATIONS: { match: string; name: string; address: string; m
     match: 'المونسية',
     name: 'فرع المونسية',
     address: 'طريق الدمام الفرعي، المونسية، الرياض 13253',
+    // The Google Maps listing: «عالم وافي للتجارة, Dammam Branch Rd, Al Munsiyah, Riyadh 13253».
     mapUrl:
       'https://www.google.com/maps/search/?api=1&query=' +
-      encodeURIComponent('عالم وافي، طريق الدمام الفرعي، المونسية، الرياض 13253'),
+      encodeURIComponent('عالم وافي للتجارة, Dammam Branch Rd, Al Munsiyah, Riyadh 13253'),
   },
 ];
 
 export function branchLocationFor(nameAr: string) {
   return BRANCH_LOCATIONS.find((location) => nameAr.includes(location.match)) ?? null;
+}
+
+/** The branch name to show: ours when we know the branch, else the API's without «(تجريبي)». */
+export function branchDisplayName(nameAr: string): string {
+  return branchLocationFor(nameAr)?.name ?? nameAr.replace(/\s*\(تجريبي\)\s*/g, '').trim();
 }
 
 /** True when the shipping city is Riyadh (same-day / next-day delivery). */

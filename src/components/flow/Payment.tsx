@@ -86,7 +86,8 @@ function callbackUrl(orderNumber: string): string {
 }
 
 export function StepPayment({ variant }: { variant: 'sheet' | 'modal' }) {
-  const { order, variant: device, activeColor } = usePurchaseFlow();
+  const { order, variant: device, activeColor, method, selectedBranch } = usePurchaseFlow();
+  const branchName = method === 'pickup' ? (selectedBranch?.name ?? '') : '';
   const formClass = `mysr-form-${useId().replace(/[^a-zA-Z0-9]/g, '')}`;
   const hostRef = useRef<HTMLDivElement>(null);
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading');
@@ -101,7 +102,7 @@ export function StepPayment({ variant }: { variant: 'sheet' | 'modal' }) {
     loadMpf()
       .then(() => {
         if (cancelled || !window.Moyasar) return;
-        const description = [PRODUCT_NAME_AR, activeColor?.label, device?.storage_label, order.order_number]
+        const description = [PRODUCT_NAME_AR, activeColor?.label, device?.storage_label, branchName, order.order_number]
           .filter(Boolean)
           .join(' · ');
 
@@ -118,7 +119,12 @@ export function StepPayment({ variant }: { variant: 'sheet' | 'modal' }) {
           // Lets the backend match a webhook to the order even if verify never runs.
           // color: the colour the customer picked, readable in Moyasar's dashboard
           // even while the order's variant_id is a shared one.
-          metadata: { order_number: order.order_number, color: activeColor?.label ?? '' },
+          // branch: the pickup branch the customer picked (same reason).
+          metadata: {
+            order_number: order.order_number,
+            color: activeColor?.label ?? '',
+            ...(branchName ? { branch: branchName } : {}),
+          },
           ...(METHODS.includes('applepay')
             ? {
                 apple_pay: {
@@ -139,7 +145,7 @@ export function StepPayment({ variant }: { variant: 'sheet' | 'modal' }) {
       cancelled = true;
       if (host) host.innerHTML = '';
     };
-  }, [order, device, activeColor, formClass]);
+  }, [order, device, activeColor, branchName, formClass]);
 
   if (!order) return null;
 
