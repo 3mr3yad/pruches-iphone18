@@ -9,13 +9,6 @@ import { usePurchaseFlow } from '@/hooks/usePurchaseFlow';
 import { Reveal, RevealItem } from '../ui/Reveal';
 import { Button } from '../ui/Button';
 
-/** lg re-orders the swatches to the desktop frame: أسود · أزرق جليدي · عنابي. */
-const LG_ORDER: Record<ColorId, string> = {
-  burgundy: 'lg:order-3',
-  black: 'lg:order-1',
-  glacier: 'lg:order-2',
-};
-
 function Swatch({
   id,
   name,
@@ -43,7 +36,7 @@ function Swatch({
       onClick={onSelect}
       aria-pressed={selected}
       aria-label={name}
-      className={`flex min-h-11 flex-col items-center gap-2 ${LG_ORDER[id]}`}
+      className="flex min-h-11 flex-col items-center gap-2"
     >
       <span className={`relative grid ${box} place-items-center`}>
         <span aria-hidden className="absolute inset-0 rounded-full border-2 border-white/15" />
@@ -72,20 +65,16 @@ function Swatch({
   );
 }
 
-/**
- * The burgundy sheet is one tall photo; Figma crops it to the phones with the
- * percentages below. Keeping the crop in CSS preserves the original pixels.
- */
-function PhoneCrop({ src, alt, className }: { src: string; alt: string; className?: string }) {
+/** Apple's front-and-back cut-out for the colour, centred in the photo box. */
+function PhoneShot({ src, alt, className }: { src: string; alt: string; className?: string }) {
   return (
-    <div className={`relative overflow-hidden ${className ?? ''}`}>
+    <div className={`relative ${className ?? ''}`}>
       <Image
         src={src}
         alt={alt}
-        width={724}
-        height={2172}
+        fill
         sizes="(max-width: 1023px) 300px, 531px"
-        className="absolute left-[-80.79%] top-[-413.48%] h-[869.57%] w-[376.84%] max-w-none"
+        className="object-contain"
       />
     </div>
   );
@@ -145,7 +134,7 @@ export function Finishes() {
               exit={{ opacity: 0 }}
               transition={fade}
             >
-              <PhoneCrop
+              <PhoneShot
                 src={active.image}
                 alt={`آيفون 18 برو ماكس باللون ${active.name}`}
                 className="h-[390px] w-[300px]"
@@ -164,7 +153,7 @@ export function Finishes() {
         <RevealItem className="mt-[22px]">{swatches('sm', true)}</RevealItem>
 
         <RevealItem as="p" className="mt-[18px] w-full text-[15px] leading-[1.9] text-body">
-          {FINISHES_SECTION.copy}
+          {active.caption}
         </RevealItem>
 
         <RevealItem className="mt-[22px] w-full">
@@ -186,7 +175,7 @@ export function Finishes() {
               exit={{ opacity: 0 }}
               transition={fade}
             >
-              <PhoneCrop
+              <PhoneShot
                 src={active.image}
                 alt={`آيفون 18 برو ماكس باللون ${active.name}`}
                 className="aspect-[531/690] h-auto w-[36.9vw] max-w-[531px]"
@@ -203,7 +192,7 @@ export function Finishes() {
             {heading('text-[clamp(4rem,6.94vw,6.25rem)] font-extrabold leading-[1.6] text-white')}
           </RevealItem>
           <RevealItem as="p" className="mt-5 text-[clamp(1.375rem,2.36vw,2.125rem)] leading-[1.35] text-body">
-            {FINISHES_SECTION.copy}
+            {active.caption}
           </RevealItem>
           <RevealItem className="mt-5">{swatches('lg', false)}</RevealItem>
           <RevealItem as="p" className="mt-5 text-[clamp(1.25rem,2.08vw,1.875rem)] leading-[1.35] text-body">

@@ -136,7 +136,11 @@ export function StepColorStorage({ variant }: { variant: Variant }) {
     );
   }
 
-  const price = selected ? formatHalalas(selected.price) : '—';
+  // Same price for every colour, so show it even before a colour has its variant.
+  const shownPrice = selected?.price ?? storageOptions.find((o) => o.available && o.label === activeStorage)?.price;
+  const price = shownPrice === undefined ? '—' : formatHalalas(shownPrice);
+
+
 
   return (
     <div className={`flex flex-col ${isModal ? 'gap-4 [@media(max-height:860px)]:gap-3' : 'gap-5'}`}>
@@ -146,7 +150,7 @@ export function StepColorStorage({ variant }: { variant: Variant }) {
         <div
           role="radiogroup"
           aria-label={FLOW.step1.colorLabel}
-          className="grid w-full grid-cols-3 gap-2.5 md:gap-3"
+          className="grid w-full grid-cols-4 gap-2 md:gap-3"
         >
           {colors.map((option) => {
             const isSelected = option.key === activeColor?.key;
@@ -157,15 +161,15 @@ export function StepColorStorage({ variant }: { variant: Variant }) {
                 onSelect={() => setColor(option.key)}
                 label={option.label}
                 variant={variant}
-                className="h-16 flex-col gap-1.5 px-1 md:h-[72px] md:gap-1.5 [@media(min-width:768px)_and_(max-height:860px)]:h-[62px]"
+                className="h-[74px] flex-col gap-1 px-1 md:h-[78px] [@media(min-width:768px)_and_(max-height:860px)]:h-[70px]"
               >
                 <span
                   aria-hidden
-                  className="size-[22px] rounded-full ring-1 ring-inset ring-white/25 md:size-8"
-                  style={{ backgroundColor: dotFor(option.key) }}
+                  className="size-[22px] shrink-0 rounded-full ring-1 ring-inset ring-white/25 md:size-7"
+                  style={{ backgroundColor: option.dot ?? dotFor(option.key) }}
                 />
                 <span
-                  className={`flex items-center gap-1.5 text-center text-[12.5px] font-bold md:text-sm ${
+                  className={`flex items-center gap-1 text-center text-[12px] font-bold leading-tight md:text-[13px] ${
                     isSelected ? 'text-white md:text-pink' : 'text-body md:font-medium md:text-modal-body'
                   }`}
                 >
@@ -176,6 +180,12 @@ export function StepColorStorage({ variant }: { variant: Variant }) {
             );
           })}
         </div>
+        {/* Until the API has a variant for this colour there is nothing to order. */}
+        {activeColor && !activeColor.orderable ? (
+          <p role="status" className="w-full text-start text-xs text-pink">
+            {FLOW.step1.colorNotOrderable}
+          </p>
+        ) : null}
       </div>
 
       {/* Storage */}

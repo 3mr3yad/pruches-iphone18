@@ -55,7 +55,7 @@ export function Hero({ ctaRef }: { ctaRef?: React.RefObject<HTMLButtonElement> }
         <div className="absolute inset-y-0 -left-[44.8%] -right-[44.62%] -top-[6px] lg:inset-0">
           <Image
             src="/images/hero.webp"
-            alt={`${PRODUCT_NAME_AR} — ثلاثة ألوان`}
+            alt={`${PRODUCT_NAME_AR} باللون العنابي`}
             width={1440}
             height={960}
             priority

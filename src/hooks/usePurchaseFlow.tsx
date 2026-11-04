@@ -22,14 +22,18 @@ import {
   type FulfillmentMethod,
   type Variant,
 } from '@/lib/api';
-import { FLOW, STORAGE_TIERS, finishIdFor, type PickupTimeId } from '@/lib/content';
+import { FINISHES, FLOW, STORAGE_TIERS, finishIdFor, type PickupTimeId } from '@/lib/content';
 import { normalizePhone } from '@/lib/format';
 import type { CountryCode } from 'libphonenumber-js/min';
 
 export type Step = 1 | 2 | 3;
 export type LoadStatus = 'loading' | 'ready' | 'error';
 
-export type ColorOption = { key: string; label: string };
+/**
+ * A colour tile. `key` is the API colour key when the API sells the colour,
+ * otherwise the finish id; `orderable` is false until the API has a variant.
+ */
+export type ColorOption = { key: string; label: string; dot: string | null; orderable: boolean };
 
 /** A storage tile: sellable tiers carry the API price, the rest Apple's official price. */
 export type StorageOption = { label: string; price: number; available: boolean };
@@ -149,15 +153,24 @@ function reducer(state: State, action: Action): State {
   }
 }
 
-/** Unique colours in API order. */
+/**
+ * Every finish (named and ordered as in FINISHES), each tied to the API colour
+ * that represents it, plus any API colour that matches no finish.
+ */
 function colorOptions(variants: Variant[]): ColorOption[] {
-  const seen = new Map<string, ColorOption>();
+  const apiColors = new Map<string, string>();
   for (const variant of variants) {
-    if (!seen.has(variant.color)) {
-      seen.set(variant.color, { key: variant.color, label: variant.color_label_ar });
-    }
+    if (!apiColors.has(variant.color)) apiColors.set(variant.color, variant.color_label_ar);
   }
-  return [...seen.values()];
+  const keys = [...apiColors.keys()];
+  const finishes = FINISHES.map((finish) => {
+    const key = keys.find((k) => finishIdFor(k) === finish.id);
+    return { key: key ?? finish.id, label: finish.name, dot: finish.dot, orderable: Boolean(key) };
+  });
+  const extra = keys
+    .filter((k) => !finishIdFor(k))
+    .map((k) => ({ key: k, label: apiColors.get(k) ?? k, dot: null, orderable: true }));
+  return [...finishes, ...extra];
 }
 
 /** Picks the API colour for `wanted`: exact key, then same finish, then the first. */
@@ -303,19 +316,17 @@ export function PurchaseFlowProvider({ children }: { children: ReactNode }) {
 
   const colors = useMemo(() => colorOptions(variants), [variants]);
   const activeColor = useMemo(() => resolveColor(colors, state.color), [colors, state.color]);
-  const storages = useMemo(
-    () =>
-      activeColor
-        ? [...new Set(variants.filter((v) => v.color === activeColor.key).map((v) => v.storage_label))]
-        : [],
-    [variants, activeColor],
-  );
+  // Sellable sizes across all colours (every colour shares the same sizes).
+  const storages = useMemo(() => [...new Set(variants.map((v) => v.storage_label))], [variants]);
   const activeStorage =
     state.storage && storages.includes(state.storage) ? state.storage : (storages[0] ?? null);
   const storageOptions = useMemo<StorageOption[]>(() => {
     if (!activeColor) return [];
     const priceOf = (label: string) =>
-      variants.find((v) => v.color === activeColor.key && v.storage_label === label)?.price;
+      (
+        variants.find((v) => v.color === activeColor.key && v.storage_label === label) ??
+        variants.find((v) => v.storage_label === label)
+      )?.price;
     const tiers = STORAGE_TIERS.map(({ label, officialPrice }) => {
       const price = priceOf(label);
       return price === undefined

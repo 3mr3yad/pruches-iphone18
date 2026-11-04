@@ -40,7 +40,7 @@ export const HERO = {
   copyLead: 'اختر اللون والسعة المناسبين لك، وراجع تفاصيل الشراء ',
   copyStrong: 'والاستلام فوري',
   cta: 'اشترِ الآن',
-  note: 'توفّر الألوان والسعات حسب المخزون.',
+  note: 'متوفر بأربعة ألوان وبسعة 256 جيجابايت.',
   modelLabel: 'الطراز',
   trust: [
     { label: 'استلام من الفرع', icon: '/icons/store.svg' },
@@ -147,52 +147,60 @@ export const APERTURE = {
   chips: ['كاميرا أمامية 18MP', 'تحكم احترافي بالفيديو', 'فتحة عدسة متغيرة'],
 };
 
-export type ColorId = 'burgundy' | 'black' | 'glacier';
+export type ColorId = 'burgundy' | 'black' | 'glacier' | 'silver';
 
 export type Finish = {
   id: ColorId;
+  /** Colour name as Wafi markets it. */
   name: string;
   heading: string;
-  /** Inner fill of the swatch, taken from the Figma swatch assets. */
+  /** Swatch fill, sampled from Apple's product photo. */
   dot: string;
+  /** Front-and-back product cut-out (transparent webp, 812×994) from apple.com/sa. */
   image: string;
-  /** True while we are still showing the burgundy photo as a stand-in. */
-  imageIsPlaceholder: boolean;
+  /** One line under the colour name in the purchase modal and the colours section. */
+  caption: string;
 };
 
+/** All four iPhone 18 Pro Max finishes, burgundy (the hero colour) first. Every colour can be ordered. */
 export const FINISHES: Finish[] = [
   {
     id: 'burgundy',
-    name: 'عنابي',
-    heading: 'عنابي.',
-    dot: '#5B1A24',
-    image: '/images/burgundy-phone.webp',
-    imageIsPlaceholder: false,
+    name: 'العنابي',
+    heading: 'العنابي.',
+    dot: '#4B2B32',
+    image: '/images/iphone-burgundy.webp',
+    caption: 'لون عميق ودافئ، يلتقط الضوء مع كل زاوية.',
   },
   {
     id: 'black',
-    name: 'أسود',
-    heading: 'أسود.',
-    dot: '#1D1D1F',
-    // TODO: replace with black product photos — only burgundy shots exist in Figma.
-    image: '/images/burgundy-phone.webp',
-    imageIsPlaceholder: true,
+    name: 'أسود كلاسيكي',
+    heading: 'أسود كلاسيكي.',
+    dot: '#1E1E20',
+    image: '/images/iphone-black.webp',
+    caption: 'أسود أنيق وهادئ، بلمسة احترافية لا تخطئها العين.',
   },
   {
     id: 'glacier',
-    name: 'أزرق جليدي',
-    heading: 'أزرق جليدي.',
-    dot: '#C7D4DB',
-    // TODO: replace with glacier-blue product photos — only burgundy shots exist in Figma.
-    image: '/images/burgundy-phone.webp',
-    imageIsPlaceholder: true,
+    name: 'الأزرق الجليدي',
+    heading: 'الأزرق الجليدي.',
+    dot: '#A5B3C7',
+    image: '/images/iphone-glacier.webp',
+    caption: 'أزرق جليدي ناعم، منعش ومختلف.',
+  },
+  {
+    id: 'silver',
+    name: 'الفضي',
+    heading: 'الفضي.',
+    dot: '#D9D9D9',
+    image: '/images/iphone-silver.webp',
+    caption: 'فضي ساطع وكلاسيكي، يعكس الضوء بنقاء.',
   },
 ];
 
 export const FINISHES_SECTION = {
-  eyebrow: 'ثلاثة ألوان.',
-  copy: 'لون عميق ودافئ، يلتقط الضوء مع كل زاوية. متوفر أيضاً بالأسود والأزرق الجليدي.',
-  swatchList: 'أسود · أزرق جليدي · عنابي',
+  eyebrow: 'أربعة ألوان.',
+  swatchList: 'العنابي · أسود كلاسيكي · الأزرق الجليدي · الفضي',
   cta: 'اشترِ الآن',
 };
 
@@ -247,7 +255,7 @@ export const PURCHASE_CARD = {
   title: 'استلام فوري',
   copy: 'اختر اللون والسعة المناسبين لك، وراجع تفاصيل الشراء والاستلام قبل تأكيد طلبك.',
   cta: 'اشترِ الآن',
-  note: 'توفّر الألوان والسعات حسب المخزون.',
+  note: 'متوفر بأربعة ألوان وبسعة 256 جيجابايت.',
 };
 
 export const FAQ_TITLE = 'الأسئلة الشائعة';
@@ -267,7 +275,7 @@ export const FAQ = [
   },
   {
     q: 'ما الألوان المتاحة؟',
-    a: 'ثلاثة ألوان: عنابي، وأسود، وأزرق جليدي. يختلف توفّر الألوان والسعات حسب المخزون في فروعنا.',
+    a: 'أربعة ألوان: العنابي، والأسود الكلاسيكي، والأزرق الجليدي، والفضي، وكلها متاحة للطلب بسعة 256 جيجابايت.',
   },
   {
     q: 'ما السعات المتوفرة؟',
@@ -318,6 +326,7 @@ export function finishIdFor(colorKey: string): ColorId | null {
   if (key.includes('burgundy') || key.includes('wine') || key.includes('red')) return 'burgundy';
   if (key.includes('glacier') || key.includes('blue')) return 'glacier';
   if (key.includes('black')) return 'black';
+  if (key.includes('silver') || key.includes('white')) return 'silver';
   return null;
 }
 
@@ -400,7 +409,7 @@ export const FLOW = {
     sub: 'حدّد اختيارك، ثم تابع لمراجعة تفاصيل الشراء.',
     colorLabel: 'اللون',
     storageLabel: 'سعة التخزين',
-    storageNote: 'توفّر الألوان والسعات حسب المخزون.',
+    storageNote: 'المتوفر حالياً سعة 256 جيجابايت فقط.',
     fulfillmentLabel: 'طريقة التوصيل',
     fulfillmentNotes: {
       pickup: 'استلام مجاني من فرعينا في الرياض، من السبت إلى الخميس، من ٨ إلى ١٠ مساءً.',
@@ -408,6 +417,8 @@ export const FLOW = {
         'شحن لكل مدن المملكة خلال ٣–٥ أيام بـ ٤٩ ريال. داخل الرياض: توصيل في نفس اليوم أو اليوم التالي.',
     },
     unavailable: 'غير متوفر',
+    /** Shown when a colour has no order variant in the API yet. */
+    colorNotOrderable: 'هذا اللون غير متاح للطلب حالياً، اختر لوناً آخر.',
     shippingLine: 'الشحن',
     shippingFree: 'الاستلام من الفرع مجاناً',
     summaryLabel: 'اختيارك',
@@ -513,5 +524,4 @@ export const FLOW = {
   submitting: 'جارٍ إنشاء الطلب…',
   note: 'راجع تفاصيل طلبك قبل الدفع.',
   close: 'إغلاق',
-  previewCaption: 'لون عميق ودافئ، يلتقط الضوء مع كل زاوية.',
 };

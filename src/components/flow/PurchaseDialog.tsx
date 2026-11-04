@@ -58,7 +58,8 @@ export function PurchaseDialog() {
   useScrollLock(open);
   const panelRef = useFocusTrap<HTMLDivElement>(open, closeFlow);
 
-  const finishId = activeColor ? finishIdFor(activeColor.key) : null;
+  // Before variants load, the colour picked in the Finishes section still drives the photo.
+  const finishId = activeColor ? finishIdFor(activeColor.key) : finishIdFor(flow.color) ?? flow.color;
   const activeFinish = FINISHES.find((finish) => finish.id === finishId) ?? FINISHES[0];
   const colorName = activeColor?.label ?? activeFinish.name;
   const titleId = `${uid}-flow-title`;
@@ -189,15 +190,30 @@ export function PurchaseDialog() {
                 </div>
 
                 <div className="relative hidden w-[420px] shrink-0 overflow-hidden bg-modal-rail lg:block">
-                  {/* Figma 463:261 — 696x624 at left -138 / top 48 inside the 420x760 rail. */}
-                  <Image
-                    src="/images/hero.webp"
-                    alt={`آيفون 18 برو ماكس باللون ${colorName}`}
-                    width={1440}
-                    height={960}
-                    sizes="420px"
-                    className="absolute left-[-32.86%] top-[6.32%] h-[82.1%] w-[165.71%] max-w-none object-cover"
+                  {/* Glow behind the phone, tinted by the brand pink. */}
+                  <div
+                    aria-hidden
+                    className="absolute inset-x-0 top-[12%] h-[60%] bg-[radial-gradient(closest-side,rgba(240,172,215,0.16),transparent)]"
                   />
+                  {/* Apple's cut-out for the chosen colour; cross-fades on change. */}
+                  <AnimatePresence initial={false}>
+                    <motion.div
+                      key={activeFinish.id}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: reduced ? 0.15 : 0.4, ease: EASE }}
+                      className="absolute inset-x-10 bottom-[190px] top-20"
+                    >
+                      <Image
+                        src={activeFinish.image}
+                        alt={`آيفون 18 برو ماكس باللون ${colorName}`}
+                        fill
+                        sizes="340px"
+                        className="object-contain"
+                      />
+                    </motion.div>
+                  </AnimatePresence>
                   <div
                     aria-hidden
                     className="absolute inset-y-0 start-0 w-[70px] bg-gradient-to-r from-transparent to-modal-bg"
@@ -216,7 +232,7 @@ export function PurchaseDialog() {
                   </button>
                   <div className="absolute inset-x-8 bottom-[70px] flex flex-col items-center gap-2 text-center">
                     <p className="text-[23px] font-bold text-white">{colorName}.</p>
-                    <p className="text-[13px] text-modal-body">{FLOW.previewCaption}</p>
+                    <p className="text-[13px] text-modal-body">{activeFinish.caption}</p>
                     {step > 1 && activeStorage ? (
                       <p className="font-latin text-[13px] text-modal-body">
                         <bdi>{activeStorage}</bdi>
@@ -241,20 +257,21 @@ export function PurchaseDialog() {
               transition={reduced ? { duration: 0.15 } : SHEET_SPRING}
               drag={reduced ? false : 'y'}
               dragControls={dragControls}
-              /* A drag panel calls preventDefault on pointerdown, which stops
-                 inputs from taking focus on touch. Once a step has inputs,
-                 the drag starts from the handle only. */
-              dragListener={step === 1}
+              /* Drag-to-dismiss starts from the handle only, on every step. A
+                 sheet-wide drag listener sets `touch-action: pan-x` on the
+                 whole sheet, which blocks vertical scrolling on touch screens
+                 (and its pointerdown preventDefault stops inputs focusing). */
+              dragListener={false}
               dragConstraints={{ top: 0, bottom: 0 }}
               dragElastic={{ top: 0, bottom: 0.4 }}
               onDragEnd={onDragEnd}
-              className="absolute inset-x-0 bottom-0 max-h-[88vh] overflow-y-auto rounded-t-sheet border-t border-sheet-line bg-sheet px-gutter pb-[30px] pt-2.5"
+              className="absolute inset-x-0 bottom-0 max-h-[88vh] overflow-y-auto overscroll-contain rounded-t-sheet border-t border-sheet-line bg-sheet px-gutter pb-[30px]"
             >
               <div
                 onPointerDown={(event) => {
                   if (!reduced) dragControls.start(event);
                 }}
-                className="flex touch-none items-start justify-center pb-4"
+                className="flex touch-none items-start justify-center pb-4 pt-2.5"
               >
                 <span aria-hidden className="h-[5px] w-10 rounded-[9px] bg-[#3a3338]" />
               </div>
@@ -262,15 +279,13 @@ export function PurchaseDialog() {
               {/* RTL: thumbnail first (right), close last (left). */}
               <div className="flex w-full items-center gap-3.5">
                 <div className="relative h-[78px] w-16 shrink-0 overflow-hidden rounded-[14px] bg-[#1a1016]">
-                  {/* Figma 463:992 — 87x78 at left -11.5 inside the 64x78 thumb. */}
                   <Image
-                    src="/images/hero.webp"
+                    src={activeFinish.image}
                     alt=""
-                    width={1440}
-                    height={960}
                     aria-hidden
-                    sizes="88px"
-                    className="absolute left-[-17.97%] top-0 h-full w-[135.94%] max-w-none object-cover"
+                    fill
+                    sizes="64px"
+                    className="object-contain p-1.5"
                   />
                 </div>
                 <div className="flex flex-1 flex-col gap-0.5 text-start">

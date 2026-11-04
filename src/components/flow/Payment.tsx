@@ -86,7 +86,7 @@ function callbackUrl(orderNumber: string): string {
 }
 
 export function StepPayment({ variant }: { variant: 'sheet' | 'modal' }) {
-  const { order, variant: device } = usePurchaseFlow();
+  const { order, variant: device, activeColor } = usePurchaseFlow();
   const formClass = `mysr-form-${useId().replace(/[^a-zA-Z0-9]/g, '')}`;
   const hostRef = useRef<HTMLDivElement>(null);
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading');
@@ -101,7 +101,7 @@ export function StepPayment({ variant }: { variant: 'sheet' | 'modal' }) {
     loadMpf()
       .then(() => {
         if (cancelled || !window.Moyasar) return;
-        const description = [PRODUCT_NAME_AR, device?.color_label_ar, device?.storage_label, order.order_number]
+        const description = [PRODUCT_NAME_AR, activeColor?.label, device?.storage_label, order.order_number]
           .filter(Boolean)
           .join(' · ');
 
@@ -137,7 +137,7 @@ export function StepPayment({ variant }: { variant: 'sheet' | 'modal' }) {
       cancelled = true;
       if (host) host.innerHTML = '';
     };
-  }, [order, device, formClass]);
+  }, [order, device, activeColor, formClass]);
 
   if (!order) return null;
 
