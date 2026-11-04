@@ -339,8 +339,14 @@ export function PurchaseFlowProvider({ children }: { children: ReactNode }) {
       .map((label) => ({ label, price: priceOf(label) ?? 0, available: true }));
     return [...tiers, ...extra];
   }, [variants, activeColor, storages]);
+  // Every colour can be ordered. Until the API has a variant per colour, a
+  // colour without its own falls back to the variant for the chosen size
+  // (same product and price); the chosen colour still travels in the
+  // payment's description and metadata (see Payment.tsx).
   const variant =
-    variants.find((v) => v.color === activeColor?.key && v.storage_label === activeStorage) ?? null;
+    variants.find((v) => v.color === activeColor?.key && v.storage_label === activeStorage) ??
+    variants.find((v) => v.storage_label === activeStorage) ??
+    null;
 
   const { errors: allErrors, phone } = useMemo(() => validate(state), [state]);
   // A hint shows once its field has been left, or for every field after a submit attempt.

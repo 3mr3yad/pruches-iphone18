@@ -417,8 +417,6 @@ export const FLOW = {
         'شحن لكل مدن المملكة خلال ٣–٥ أيام بـ ٤٩ ريال. داخل الرياض: توصيل في نفس اليوم أو اليوم التالي.',
     },
     unavailable: 'غير متوفر',
-    /** Shown when a colour has no order variant in the API yet. */
-    colorNotOrderable: 'هذا اللون غير متاح للطلب حالياً، اختر لوناً آخر.',
     shippingLine: 'الشحن',
     shippingFree: 'الاستلام من الفرع مجاناً',
     summaryLabel: 'اختيارك',

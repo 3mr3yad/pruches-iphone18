@@ -180,12 +180,6 @@ export function StepColorStorage({ variant }: { variant: Variant }) {
             );
           })}
         </div>
-        {/* Until the API has a variant for this colour there is nothing to order. */}
-        {activeColor && !activeColor.orderable ? (
-          <p role="status" className="w-full text-start text-xs text-pink">
-            {FLOW.step1.colorNotOrderable}
-          </p>
-        ) : null}
       </div>
 
       {/* Storage */}

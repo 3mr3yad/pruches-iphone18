@@ -116,7 +116,9 @@ export function StepPayment({ variant }: { variant: 'sheet' | 'modal' }) {
           language: 'ar',
           supported_networks: ['mada', 'visa', 'mastercard'],
           // Lets the backend match a webhook to the order even if verify never runs.
-          metadata: { order_number: order.order_number },
+          // color: the colour the customer picked, readable in Moyasar's dashboard
+          // even while the order's variant_id is a shared one.
+          metadata: { order_number: order.order_number, color: activeColor?.label ?? '' },
           ...(METHODS.includes('applepay')
             ? {
                 apple_pay: {
