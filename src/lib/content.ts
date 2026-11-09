@@ -306,7 +306,7 @@ export const FINAL_CTA = {
 };
 
 export const FOOTER = {
-  copyright: '© ٢٠٢٦ عالم وافي · تصميم تصوري غير تابع لشركة Apple Inc. ولا معتمد منها.',
+  copyright: '© ٢٠٢٦ عالم وافي · موزّع معتمد من Apple',
   copyrightShort: '© ٢٠٢٦ عالم وافي',
 };
 

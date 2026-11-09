@@ -10,6 +10,8 @@
     --font-anton: 'Anton';
     --font-poppins: 'Poppins';
     --bg: #000000;
+    /* The page itself, behind the sections (sections keep --bg / their own colours). */
+    --page-bg: #0b0b0d;
     --surface: #0b0b0c;
     --card: #111112;
     --line: #1f1f21;
@@ -31,7 +33,7 @@
   }
 
   html {
-    background-color: var(--bg);
+    background-color: var(--page-bg);
     /* Anchor links land below the fixed header. */
     scroll-padding-top: var(--header-h);
     scroll-behavior: smooth;
@@ -45,7 +47,7 @@
   }
 
   body {
-    background-color: var(--bg);
+    background-color: var(--page-bg);
     color: var(--text);
     overflow-x: hidden;
     -webkit-font-smoothing: antialiased;
