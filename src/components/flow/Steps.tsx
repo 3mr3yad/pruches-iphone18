@@ -17,7 +17,7 @@ import {
 import { formatHalalas, upcomingPickupDays } from '@/lib/format';
 import { usePurchaseFlow, type FieldKey } from '@/hooks/usePurchaseFlow';
 import { useMotionPrefs } from '@/hooks/useMotionPrefs';
-import { Check, OptionTile } from './OptionTile';
+import { OptionTile } from './OptionTile';
 import { Field } from './Field';
 import { CountryCodeSelect } from './CountryCodeSelect';
 
@@ -173,7 +173,6 @@ export function StepColorStorage({ variant }: { variant: Variant }) {
                   }`}
                 >
                   {option.label}
-                  {isSelected && isModal ? <Check /> : null}
                 </span>
               </OptionTile>
             );
@@ -214,7 +213,6 @@ export function StepColorStorage({ variant }: { variant: Variant }) {
                   >
                     <bdi>{option.label}</bdi>
                   </span>
-                  {isSelected && isModal ? <Check className="text-pink" /> : null}
                 </span>
                 <span
                   className={`text-[10.5px] leading-tight md:text-[11px] ${
@@ -257,6 +255,7 @@ export function StepColorStorage({ variant }: { variant: Variant }) {
                 key={item.id}
                 selected={isSelected}
                 onSelect={() => setField({ method: item.id })}
+                mark="inline"
                 label={item.label}
                 variant={variant}
                 className="h-[52px] flex-1 gap-2.5 px-2 md:h-[50px]"
@@ -268,7 +267,6 @@ export function StepColorStorage({ variant }: { variant: Variant }) {
                 >
                   {item.label}
                 </span>
-                {isSelected && isModal ? <Check className="text-pink" /> : null}
               </OptionTile>
             );
           })}
@@ -497,9 +495,10 @@ export function StepPickup({ variant }: { variant: Variant }) {
                   key={branch.key}
                   selected={isSelected}
                   onSelect={() => setField({ branchId: branch.key })}
+                  mark="inline"
                   label={branch.name}
                   variant={variant}
-                  className={`w-full justify-between gap-3 px-4 ${isModal ? 'min-h-12 py-2' : 'min-h-14 py-2.5'}`}
+                  className={`w-full justify-start gap-3 px-4 ${isModal ? 'min-h-12 py-2' : 'min-h-14 py-2.5'}`}
                 >
                   <span className="flex flex-col items-start gap-0.5 text-start">
                     <span
@@ -511,7 +510,6 @@ export function StepPickup({ variant }: { variant: Variant }) {
                     </span>
                     {detail ? <span className="text-xs text-muted">{detail}</span> : null}
                   </span>
-                  {isSelected ? <Check className="text-pink" /> : null}
                 </OptionTile>
               );
             })}
@@ -594,6 +592,7 @@ export function StepPickup({ variant }: { variant: Variant }) {
                 key={slot.id}
                 selected={isSelected}
                 onSelect={() => setField({ pickupTime: slot.id })}
+                mark="inline"
                 label={slot.range}
                 variant={variant}
                 className="h-12 gap-2 px-2"
@@ -605,7 +604,6 @@ export function StepPickup({ variant }: { variant: Variant }) {
                 >
                   {slot.range}
                 </span>
-                {isSelected && isModal ? <Check className="text-pink" /> : null}
               </OptionTile>
             );
           })}

@@ -41,6 +41,35 @@ export function Check({ className }: { className?: string }) {
 }
 
 /**
+ * The radio mark every tile carries: an empty ring, filled with a pink dot
+ * once the tile is the chosen one.
+ */
+export function RadioMark({ selected, className = '' }: { selected: boolean; className?: string }) {
+  const { reduced } = useMotionPrefs();
+  return (
+    <span
+      aria-hidden
+      className={`grid size-[18px] shrink-0 place-items-center rounded-full border-[1.5px] transition-colors duration-200 ease-quint ${
+        selected ? 'border-pink' : 'border-white/30'
+      } ${className}`}
+    >
+      <AnimatePresence initial={false}>
+        {selected ? (
+          <motion.span
+            key="dot"
+            initial={reduced ? { opacity: 0 } : { scale: 0 }}
+            animate={reduced ? { opacity: 1 } : { scale: 1 }}
+            exit={reduced ? { opacity: 0 } : { scale: 0 }}
+            transition={reduced ? { duration: 0.15 } : { type: 'spring', stiffness: 520, damping: 26 }}
+            className="size-2 rounded-full bg-pink"
+          />
+        ) : null}
+      </AnimatePresence>
+    </span>
+  );
+}
+
+/**
  * A selectable tile in the purchase flow. `variant` switches between the
  * bottom-sheet styling (frames 463:936 / 463:157) and the desktop modal
  * styling (frames 463:247 / 467:449).
@@ -53,7 +82,14 @@ export function OptionTile({
   className = '',
   variant = 'sheet',
   disabled = false,
+  mark = 'corner',
 }: {
+  /**
+   * Where the radio mark goes: `corner` pins it to the tile's top start
+   * corner (compact grid tiles); `inline` puts it first in the row, i.e. on
+   * the right in RTL (wide tiles).
+   */
+  mark?: 'corner' | 'inline';
   /** Shown but not selectable (e.g. an out-of-stock storage tier). */
   disabled?: boolean;
   selected: boolean;
@@ -84,10 +120,15 @@ export function OptionTile({
       disabled={disabled}
       whileTap={reduced || disabled ? undefined : { scale: 0.97 }}
       transition={{ duration: 0.2, ease: EASE }}
-      className={`flex min-h-11 items-center justify-center rounded-2xl transition-colors duration-200 ease-quint ${base} ${
+      className={`relative flex min-h-11 items-center justify-center rounded-2xl transition-colors duration-200 ease-quint ${base} ${
         disabled ? 'cursor-not-allowed opacity-45' : ''
       } ${className}`}
     >
+      {mark === 'inline' ? (
+        <RadioMark selected={selected} />
+      ) : (
+        <RadioMark selected={selected} className="absolute start-2 top-2 !size-4" />
+      )}
       {children}
     </motion.button>
   );

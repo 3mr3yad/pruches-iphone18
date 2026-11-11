@@ -26,12 +26,14 @@ export const NAV_ITEMS: NavItem[] = [
 /** The mobile menu adds the FAQ row (frame 463:1118). */
 export const MENU_ITEMS: NavItem[] = [...NAV_ITEMS, { label: 'الأسئلة الشائعة', href: '#faq' }];
 
+/** «/#…» so the section links also work from /policies. */
 export const FOOTER_LINKS: NavItem[] = [
-  { label: 'المواصفات', href: '#specs' },
-  { label: 'الاستلام', href: '#pickup' },
-  { label: 'التوصيل', href: '#pickup' },
-  { label: 'الدفع', href: '#order' },
-  { label: 'الأسئلة الشائعة', href: '#faq' },
+  { label: 'المواصفات', href: '/#specs' },
+  { label: 'الاستلام', href: '/#pickup' },
+  { label: 'التوصيل', href: '/#pickup' },
+  { label: 'الدفع', href: '/#order' },
+  { label: 'الأسئلة الشائعة', href: '/#faq' },
+  { label: 'السياسات العامة والشروط والأحكام', href: '/policies' },
 ];
 
 export const HERO = {
