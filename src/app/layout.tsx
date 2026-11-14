@@ -10,6 +10,7 @@ import '@fontsource/cairo/700.css';
 import '@fontsource/cairo/800.css';
 import '@fontsource/changa/800.css';
 import '@fontsource/anton/400.css';
+import '@fontsource/poppins/500.css';
 import '@fontsource/poppins/600.css';
 import './globals.css';
 

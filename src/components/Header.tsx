@@ -9,6 +9,7 @@ import { usePurchaseFlow } from '@/hooks/usePurchaseFlow';
 import { useHeaderState, useMediaQuery } from '@/hooks/useViewport';
 import { useMotionPrefs } from '@/hooks/useMotionPrefs';
 import { MobileMenu } from './MobileMenu';
+import { OvfleWordmark } from '@/components/brand/OvfleWordmark';
 
 export function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -39,16 +40,9 @@ export function Header() {
           <a
             href="#top"
             className="-ms-2 inline-flex min-h-11 shrink-0 items-center px-2"
-            aria-label="عالم وافي — الصفحة الرئيسية"
+            aria-label="Ovfle — الصفحة الرئيسية"
           >
-            <Image
-              src="/icons/logo-white.svg"
-              alt="عالم وافي"
-              width={118}
-              height={24}
-              priority
-              className="h-[22px] w-auto lg:h-7"
-            />
+            <OvfleWordmark className="text-[1.6rem] lg:text-[1.9rem]" />
           </a>
 
           <nav aria-label="روابط الصفحة" className="hidden lg:block">

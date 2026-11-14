@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
-import Image from 'next/image';
 import { Footer } from '@/components/sections/Footer';
 import { POLICIES, POLICIES_PAGE, type PolicyBlock } from '@/lib/policies';
+import { OvfleWordmark } from '@/components/brand/OvfleWordmark';
 
 export const metadata: Metadata = {
   title: `${POLICIES_PAGE.title} — عالم وافي`,
@@ -91,15 +91,8 @@ export default function PoliciesPage() {
     <>
       <header className="sticky top-0 z-40 border-b border-line bg-[rgba(8,7,8,0.86)] backdrop-blur-[7px]">
         <div className="mx-auto flex h-[60px] max-w-[1440px] items-center justify-between px-gutter lg:h-[72px] lg:px-20">
-          <a href="/" className="-ms-2 inline-flex min-h-11 items-center px-2" aria-label="عالم وافي — الصفحة الرئيسية">
-            <Image
-              src="/icons/logo-white.svg"
-              alt="عالم وافي"
-              width={118}
-              height={24}
-              priority
-              className="h-[22px] w-auto lg:h-7"
-            />
+          <a href="/" className="-ms-2 inline-flex min-h-11 items-center px-2" aria-label="Ovfle — الصفحة الرئيسية">
+            <OvfleWordmark className="text-[1.6rem] lg:text-[1.9rem]" />
           </a>
           <a
             href="/"

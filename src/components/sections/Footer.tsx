@@ -1,8 +1,8 @@
 'use client';
 
-import Image from 'next/image';
 import { FOOTER, FOOTER_LINKS } from '@/lib/content';
 import { Reveal, RevealItem } from '../ui/Reveal';
+import { OvfleWordmark } from '@/components/brand/OvfleWordmark';
 
 export function Footer() {
   return (
@@ -12,13 +12,7 @@ export function Footer() {
         className="mobile-col flex flex-col items-start gap-3.5 lg:max-w-[1280px] lg:flex-row lg:items-center lg:justify-between lg:gap-8"
       >
         <RevealItem className="shrink-0">
-          <Image
-            src="/icons/logo-white.svg"
-            alt="عالم وافي"
-            width={118}
-            height={24}
-            className="h-6 w-auto lg:h-7"
-          />
+          <OvfleWordmark className="text-[1.75rem] lg:text-[2rem]" />
         </RevealItem>
 
         <RevealItem as="div" className="w-full lg:w-auto">

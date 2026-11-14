@@ -1,7 +1,6 @@
 'use client';
 
 import { useCallback } from 'react';
-import Image from 'next/image';
 import { AnimatePresence, motion } from 'motion/react';
 import { EASE } from '@/lib/motion';
 import { MENU_ITEMS, PRICE_SAVING, PRICE_WAFI, RIYAL } from '@/lib/content';
@@ -9,6 +8,7 @@ import { usePurchaseFlow } from '@/hooks/usePurchaseFlow';
 import { useFocusTrap, useScrollLock } from '@/hooks/useDialog';
 import { useMotionPrefs } from '@/hooks/useMotionPrefs';
 import { Button } from './ui/Button';
+import { OvfleWordmark } from '@/components/brand/OvfleWordmark';
 
 const Chevron = () => (
   <svg viewBox="0 0 18 18" width={18} height={18} aria-hidden className="shrink-0">
@@ -59,13 +59,7 @@ export function MobileMenu({ open, onClose }: { open: boolean; onClose: () => vo
         >
           <div ref={panelRef} className="flex h-full flex-col" tabIndex={-1}>
             <div className="flex h-[60px] shrink-0 items-center justify-between ps-gutter pe-3">
-              <Image
-                src="/icons/logo-white.svg"
-                alt="عالم وافي"
-                width={108}
-                height={22}
-                className="h-[22px] w-auto"
-              />
+              <OvfleWordmark className="text-[1.6rem]" />
               <button
                 type="button"
                 onClick={onClose}
