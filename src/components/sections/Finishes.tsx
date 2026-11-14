@@ -68,7 +68,7 @@ function Swatch({
 /** Apple's front-and-back cut-out for the colour, centred in the photo box. */
 function PhoneShot({ src, alt, className }: { src: string; alt: string; className?: string }) {
   return (
-    <div className={`relative ${className ?? ''}`}>
+    <div className={`edge-fade relative ${className ?? ''}`}>
       <Image
         src={src}
         alt={alt}

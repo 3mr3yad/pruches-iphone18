@@ -18,14 +18,13 @@ export function PurchaseCard() {
       <Reveal className="mobile-col flex flex-col lg:max-w-[1040px] overflow-hidden rounded-card-xl border border-line bg-gradient-to-b from-[#140c11] to-surface lg:flex-row lg:items-stretch lg:rounded-sheet lg:border-modal-line lg:bg-modal-bg lg:bg-none lg:shadow-modal">
         {/* Portrait: on top at mobile, on the left at lg — hence lg:order-2 in RTL. */}
         <RevealItem className="relative h-[300px] w-full shrink-0 overflow-hidden bg-black lg:order-2 lg:h-[624px] lg:w-[32.2vw] lg:max-w-[464px] lg:bg-modal-rail">
+          {/* The burgundy product shot (portrait, like this box). */}
           <Image
-            src="/images/hero.webp"
-            alt="آيفون 18 برو ماكس"
-            width={1440}
-            height={960}
+            src="/images/iphone-burgundy-new.webp"
+            alt="آيفون 18 برو ماكس باللون العنابي"
+            fill
             sizes="(max-width: 1023px) 100vw, 464px"
-            /* Figma 463:794 (350x313.8 at top -6.9) and 463:560 (696x624 at left -116). */
-            className="absolute left-0 top-[-2.3%] h-[104.6%] w-full max-w-none object-cover lg:left-[-25%] lg:top-0 lg:h-full lg:w-[150%]"
+            className="object-cover object-[50%_20%] lg:object-top"
           />
           <div
             aria-hidden

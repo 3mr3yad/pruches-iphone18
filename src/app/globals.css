@@ -237,4 +237,19 @@
       background-color 99999s ease-out 0s,
       color 99999s ease-out 0s;
   }
+
+  /*
+   * Fades a photo's edges into the page, so a product shot on its own dark
+   * backdrop doesn't read as a box against the page colour.
+   */
+  .edge-fade {
+    -webkit-mask-image:
+      linear-gradient(to right, transparent, #000 7%, #000 93%, transparent),
+      linear-gradient(to bottom, transparent, #000 5%, #000 92%, transparent);
+    -webkit-mask-composite: source-in;
+    mask-image:
+      linear-gradient(to right, transparent, #000 7%, #000 93%, transparent),
+      linear-gradient(to bottom, transparent, #000 5%, #000 92%, transparent);
+    mask-composite: intersect;
+  }
 }

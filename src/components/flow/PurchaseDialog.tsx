@@ -190,12 +190,7 @@ export function PurchaseDialog() {
                 </div>
 
                 <div className="relative hidden w-[420px] shrink-0 overflow-hidden bg-modal-rail lg:block">
-                  {/* Glow behind the phone, tinted by the brand pink. */}
-                  <div
-                    aria-hidden
-                    className="absolute inset-x-0 top-[12%] h-[60%] bg-[radial-gradient(closest-side,rgba(240,172,215,0.16),transparent)]"
-                  />
-                  {/* Apple's cut-out for the chosen colour; cross-fades on change. */}
+                  {/* The chosen colour's product shot fills the rail; cross-fades on change. */}
                   <AnimatePresence initial={false}>
                     <motion.div
                       key={activeFinish.id}
@@ -203,14 +198,15 @@ export function PurchaseDialog() {
                       animate={{ opacity: 1 }}
                       exit={{ opacity: 0 }}
                       transition={{ duration: reduced ? 0.15 : 0.4, ease: EASE }}
-                      className="absolute inset-x-10 bottom-[190px] top-20"
+                      /* Stops above the colour name so the caption never sits on the phone. */
+                      className="edge-fade absolute inset-x-0 bottom-[150px] top-0"
                     >
                       <Image
                         src={activeFinish.image}
                         alt={`آيفون 18 برو ماكس باللون ${colorName}`}
                         fill
-                        sizes="340px"
-                        className="object-contain"
+                        sizes="420px"
+                        className="object-cover object-center"
                       />
                     </motion.div>
                   </AnimatePresence>
@@ -285,7 +281,7 @@ export function PurchaseDialog() {
                     aria-hidden
                     fill
                     sizes="64px"
-                    className="object-contain p-1.5"
+                    className="object-cover object-top"
                   />
                 </div>
                 <div className="flex flex-1 flex-col gap-0.5 text-start">

@@ -158,7 +158,7 @@ export type Finish = {
   heading: string;
   /** Swatch fill, sampled from Apple's product photo. */
   dot: string;
-  /** Front-and-back product cut-out (transparent webp, 812×994) from apple.com/sa. */
+  /** Wafi's product shot for the colour (531×690 webp on a dark backdrop; sources: public/images/*-new.png). */
   image: string;
   /** One line under the colour name in the purchase modal and the colours section. */
   caption: string;
@@ -171,7 +171,7 @@ export const FINISHES: Finish[] = [
     name: 'العنابي',
     heading: 'العنابي.',
     dot: '#4B2B32',
-    image: '/images/iphone-burgundy.webp',
+    image: '/images/iphone-burgundy-new.webp',
     caption: 'لون عميق ودافئ، يلتقط الضوء مع كل زاوية.',
   },
   {
@@ -179,7 +179,7 @@ export const FINISHES: Finish[] = [
     name: 'أسود كلاسيكي',
     heading: 'أسود كلاسيكي.',
     dot: '#1E1E20',
-    image: '/images/iphone-black.webp',
+    image: '/images/iphone-black-new.webp',
     caption: 'أسود أنيق وهادئ، بلمسة احترافية لا تخطئها العين.',
   },
   {
@@ -187,7 +187,7 @@ export const FINISHES: Finish[] = [
     name: 'الأزرق الجليدي',
     heading: 'الأزرق الجليدي.',
     dot: '#A5B3C7',
-    image: '/images/iphone-glacier.webp',
+    image: '/images/iphone-glacier-new.webp',
     caption: 'أزرق جليدي ناعم، منعش ومختلف.',
   },
   {
@@ -195,7 +195,7 @@ export const FINISHES: Finish[] = [
     name: 'الفضي',
     heading: 'الفضي.',
     dot: '#D9D9D9',
-    image: '/images/iphone-silver.webp',
+    image: '/images/iphone-silver-new.webp',
     caption: 'فضي ساطع وكلاسيكي، يعكس الضوء بنقاء.',
   },
 ];
