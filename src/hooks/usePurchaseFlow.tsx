@@ -14,8 +14,10 @@ import {
 import {
   ApiError,
   createOrder,
+  getAddons,
   getBranches,
   getVariants,
+  type Addon,
   type Branch,
   type CreateOrderBody,
   type CreatedOrder,
@@ -94,6 +96,8 @@ type State = Form & {
   /** An API colour key, or a finish id picked in the Finishes section before variants load. */
   color: string;
   storage: string | null;
+  /** Ids of the optional add-ons the customer ticked. */
+  addonIds: number[];
   showErrors: boolean;
   /** Fields the user has left at least once — gates the inline hints. */
   touched: Partial<Record<FieldKey, boolean>>;
@@ -110,6 +114,7 @@ type Action =
   | { type: 'goto'; step: Step }
   | { type: 'color'; value: string }
   | { type: 'storage'; value: string }
+  | { type: 'toggleAddon'; id: number }
   | { type: 'field'; patch: Partial<Form> }
   | { type: 'showErrors' }
   | { type: 'touch'; field: FieldKey }
@@ -123,6 +128,7 @@ const initialState: State = {
   dir: 1,
   color: 'burgundy',
   storage: null,
+  addonIds: [],
   edition: 'middle_east',
   /** Figma 494:153 preselects «الشحن». */
   method: 'shipping',
@@ -161,6 +167,13 @@ function reducer(state: State, action: Action): State {
       return { ...state, color: action.value };
     case 'storage':
       return { ...state, storage: action.value };
+    case 'toggleAddon':
+      return {
+        ...state,
+        addonIds: state.addonIds.includes(action.id)
+          ? state.addonIds.filter((id) => id !== action.id)
+          : [...state.addonIds, action.id],
+      };
     case 'field':
       return { ...state, ...action.patch, error: null };
     case 'showErrors':
@@ -269,6 +282,13 @@ type FlowApi = State & {
   branchOptions: BranchOption[];
   selectedBranch: BranchOption | null;
   reloadVariants: () => void;
+  /** Optional extras offered with the phone (empty if the API has none or failed). */
+  addons: Addon[];
+  /** The ticked add-ons, in catalog order. */
+  selectedAddons: Addon[];
+  /** Sum of the ticked add-ons (halalas). */
+  addonsTotal: number;
+  toggleAddon: (id: number) => void;
   colors: ColorOption[];
   activeColor: ColorOption | null;
   storages: string[];
@@ -304,6 +324,7 @@ export function PurchaseFlowProvider({ children }: { children: ReactNode }) {
   const [variantsStatus, setVariantsStatus] = useState<LoadStatus>('loading');
   const [branches, setBranches] = useState<Branch[]>([]);
   const [branchesStatus, setBranchesStatus] = useState<LoadStatus>('loading');
+  const [addons, setAddons] = useState<Addon[]>([]);
 
   const loadVariants = useCallback(() => {
     setVariantsStatus('loading');
@@ -328,6 +349,10 @@ export function PurchaseFlowProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     loadVariants();
     loadBranches();
+    // Add-ons are optional: if they fail to load the flow simply doesn't offer them.
+    getAddons()
+      .then(setAddons)
+      .catch(() => setAddons([]));
   }, [loadVariants, loadBranches]);
 
   const reloadVariants = useCallback(() => {
@@ -353,6 +378,12 @@ export function PurchaseFlowProvider({ children }: { children: ReactNode }) {
       requestAnimationFrame(() => trigger.focus());
     }
   }, []);
+
+  const selectedAddons = useMemo(
+    () => addons.filter((addon) => state.addonIds.includes(addon.id)),
+    [addons, state.addonIds],
+  );
+  const addonsTotal = selectedAddons.reduce((sum, addon) => sum + addon.price, 0);
 
   const colors = useMemo(() => colorOptions(variants), [variants]);
   const activeColor = useMemo(() => resolveColor(colors, state.color), [colors, state.color]);
@@ -473,6 +504,7 @@ export function PurchaseFlowProvider({ children }: { children: ReactNode }) {
       customer_name: state.name.trim(),
       customer_phone: phone,
       customer_email: state.email.trim(),
+      ...(selectedAddons.length ? { addon_ids: selectedAddons.map((addon) => addon.id) } : {}),
     };
     const body: CreateOrderBody =
       state.method === 'pickup'
@@ -508,7 +540,7 @@ export function PurchaseFlowProvider({ children }: { children: ReactNode }) {
     } catch (error) {
       dispatch({ type: 'failed', error: orderErrorMessage(error) });
     }
-  }, [variant, phone, state, selectedBranch, branches]);
+  }, [variant, phone, state, selectedBranch, branches, selectedAddons]);
 
   const next = useCallback(() => {
     if (state.step === 1) {
@@ -535,6 +567,10 @@ export function PurchaseFlowProvider({ children }: { children: ReactNode }) {
       branchOptions,
       selectedBranch,
       reloadVariants,
+      addons,
+      selectedAddons,
+      addonsTotal,
+      toggleAddon: (id) => dispatch({ type: 'toggleAddon', id }),
       colors,
       activeColor,
       storages,
@@ -566,6 +602,9 @@ export function PurchaseFlowProvider({ children }: { children: ReactNode }) {
       branchOptions,
       selectedBranch,
       reloadVariants,
+      addons,
+      selectedAddons,
+      addonsTotal,
       colors,
       activeColor,
       storages,

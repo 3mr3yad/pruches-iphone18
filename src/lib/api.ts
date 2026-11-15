@@ -6,9 +6,20 @@
  * `amount` is final: the backend adds the 4900 shipping fee itself.
  */
 
-export const API_BASE = 'https://wafii.sa/wafiservices/api/iphone18';
+/** Override with NEXT_PUBLIC_API_BASE (e.g. a local backend) for testing; defaults to production. */
+export const API_BASE = process.env.NEXT_PUBLIC_API_BASE || 'https://wafii.sa/wafiservices/api/iphone18';
 /** Verify lives one level up from the iPhone 18 routes. */
 export const VERIFY_URL = 'https://wafii.sa/wafiservices/api/moyasar/verify';
+/** The customer's printable tax invoice (a backend page, not an API route). */
+export const INVOICE_BASE = 'https://wafii.sa/wafiservices/iphone18/invoice';
+
+/**
+ * Link to a paid order's invoice. The backend unlocks it with the Moyasar
+ * payment id (from Moyasar's redirect), since order numbers are guessable.
+ */
+export function invoiceUrl(orderNumber: string, paymentId: string): string {
+  return `${INVOICE_BASE}/${encodeURIComponent(orderNumber)}?p=${encodeURIComponent(paymentId)}`;
+}
 
 export type Variant = {
   id: number;
@@ -24,6 +35,15 @@ export type Variant = {
    * editions still loads (the page then prices from EDITIONS in content.ts).
    */
   edition?: string | null;
+};
+
+/** An optional extra sold with the phone. Price in halalas, set by the backend. */
+export type Addon = {
+  id: number;
+  /** Stable key used to pick the photo (ADDONS_META in content.ts). */
+  key: string;
+  name_ar: string;
+  price: number;
 };
 
 export type Branch = {
@@ -42,6 +62,8 @@ export type CreateOrderBody = {
   /** Required by the API; used for the post-payment confirmation e-mail. */
   customer_email: string;
   fulfillment_method: FulfillmentMethod;
+  /** Optional extras; the backend prices them and adds them to the order's amount. */
+  addon_ids?: number[];
 } & (
   | {
       fulfillment_method: 'pickup';
@@ -124,6 +146,10 @@ function unwrapOne<T>(payload: T | { data: T }): T {
 
 export async function getVariants(): Promise<Variant[]> {
   return unwrap(await request<{ data: Variant[] }>(`${API_BASE}/variants`));
+}
+
+export async function getAddons(): Promise<Addon[]> {
+  return unwrap(await request<{ data: Addon[] }>(`${API_BASE}/addons`));
 }
 
 export async function getBranches(): Promise<Branch[]> {

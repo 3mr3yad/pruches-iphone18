@@ -1,9 +1,11 @@
 'use client';
 
 import { useMemo } from 'react';
+import Image from 'next/image';
 import { motion } from 'motion/react';
 import { EASE } from '@/lib/motion';
 import {
+  ADDONS_META,
   FINISHES,
   FLOW,
   FULFILLMENTS,
@@ -91,6 +93,98 @@ export function Spinner({ className = '' }: { className?: string }) {
   );
 }
 
+/* ---------------------------- optional add-ons ---------------------------- */
+
+/** Optional extras ticked on top of the phone (multi-select, all optional). */
+function AddonsPicker({ variant }: { variant: Variant }) {
+  const { addons, selectedAddons, addonsTotal, toggleAddon } = usePurchaseFlow();
+  const { reduced } = useMotionPrefs();
+  const isModal = variant === 'modal';
+  if (addons.length === 0) return null;
+
+  return (
+    <div className="flex flex-col gap-2.5 md:gap-2">
+      <div className="flex w-full items-center justify-between">
+        <p className={isModal ? 'text-base font-bold text-white' : 'text-sm font-bold text-white'}>
+          {FLOW.step1.addonsLabel}{' '}
+          <span className={`font-normal ${isModal ? 'text-sm text-modal-body' : 'text-xs text-muted'}`}>
+            ({FLOW.step1.addonsOptional})
+          </span>
+        </p>
+        {addonsTotal > 0 ? (
+          <AnimatedValue
+            value={`+ ${formatHalalas(addonsTotal)} ${RIYAL}`}
+            className={isModal ? 'text-sm text-pink' : 'text-[13px] font-semibold text-body'}
+          />
+        ) : null}
+      </div>
+      <div className="flex w-full flex-col gap-2">
+        {addons.map((addon) => {
+          const meta = ADDONS_META[addon.key];
+          const checked = selectedAddons.some((item) => item.id === addon.id);
+          const priceText = `${formatHalalas(addon.price)} ${RIYAL}`;
+          const tone =
+            variant === 'sheet'
+              ? checked
+                ? 'border-2 border-pink bg-pink/[0.08]'
+                : 'border border-line-2 bg-card'
+              : checked
+                ? 'border-[1.5px] border-pink bg-modal-tile-on'
+                : 'border border-modal-tile-line bg-modal-tile';
+          return (
+            <motion.button
+              key={addon.id}
+              type="button"
+              role="checkbox"
+              aria-checked={checked}
+              aria-label={`${addon.name_ar} · ${priceText}`}
+              onClick={() => toggleAddon(addon.id)}
+              whileTap={reduced ? undefined : { scale: 0.98 }}
+              transition={{ duration: 0.2, ease: EASE }}
+              className={`flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-start transition-colors duration-200 ease-quint ${tone}`}
+            >
+              <CheckMark checked={checked} />
+              <span className="relative size-14 shrink-0 overflow-hidden rounded-xl bg-white">
+                {meta ? (
+                  <Image src={meta.image} alt="" aria-hidden fill sizes="56px" className="object-contain p-1.5" />
+                ) : null}
+              </span>
+              <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+                <span className={`line-clamp-2 text-[13px] font-bold leading-snug md:text-sm ${checked ? 'text-white' : 'text-body md:text-white'}`}>
+                  {addon.name_ar}
+                </span>
+                {meta?.subtitle ? (
+                  <span className="line-clamp-1 text-[11px] leading-tight text-muted md:text-xs">{meta.subtitle}</span>
+                ) : null}
+              </span>
+              <span className={`shrink-0 text-[13px] font-bold md:text-sm ${checked ? 'text-pink' : 'text-white'}`}>
+                +{priceText}
+              </span>
+            </motion.button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function CheckMark({ checked }: { checked: boolean }) {
+  return (
+    <span
+      aria-hidden
+      className={`grid size-5 shrink-0 place-items-center rounded-md transition-colors duration-200 ${
+        checked ? 'bg-pink text-on-pink' : 'border border-white/30'
+      }`}
+    >
+      {checked ? (
+        <svg viewBox="0 0 16 16" width={12} height={12} fill="none" stroke="currentColor" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round">
+          <path d="M3.5 8.5l3 3 6-6.5" />
+        </svg>
+      ) : null}
+    </span>
+  );
+}
+
 /* ------------------------- step 1 · colour & storage ------------------------ */
 
 export function StepColorStorage({ variant }: { variant: Variant }) {
@@ -110,6 +204,7 @@ export function StepColorStorage({ variant }: { variant: Variant }) {
     editionOptions,
     activeEdition,
     unitPrice,
+    addonsTotal,
   } = usePurchaseFlow();
   const activeFulfillment = FULFILLMENTS.find((item) => item.id === method) ?? FULFILLMENTS[1];
   const isModal = variant === 'modal';
@@ -287,6 +382,8 @@ export function StepColorStorage({ variant }: { variant: Variant }) {
         </div>
       </div>
 
+      <AddonsPicker variant={variant} />
+
       {/* Fulfillment method — frame 494:153 */}
       <div className="flex flex-col gap-2.5 md:gap-2">
         <LabelRow label={FLOW.step1.fulfillmentLabel} value={activeFulfillment.label} variant={variant} />
@@ -341,6 +438,12 @@ export function StepColorStorage({ variant }: { variant: Variant }) {
               <AnimatedValue value={`${price} ${RIYAL}`} className="text-[15px] font-bold text-pink" />
             </div>
           </div>
+          {addonsTotal > 0 ? (
+            <div className="-mt-2 flex w-full items-center justify-between text-[13px]">
+              <p className="text-modal-body">{FLOW.step1.addonsLine}</p>
+              <AnimatedValue value={`+ ${formatHalalas(addonsTotal)} ${RIYAL}`} className="text-white" />
+            </div>
+          ) : null}
           <div className="-mt-2 flex w-full items-center justify-between text-[13px]">
             <p className="text-modal-body">{FLOW.step1.shippingLine}</p>
             <AnimatedValue
@@ -364,6 +467,12 @@ export function StepColorStorage({ variant }: { variant: Variant }) {
               }
               className="text-[11.5px] text-muted"
             />
+            {addonsTotal > 0 ? (
+              <AnimatedValue
+                value={`${FLOW.step1.addonsLine} + ${formatHalalas(addonsTotal)} ${RIYAL}`}
+                className="text-[11.5px] text-muted"
+              />
+            ) : null}
           </div>
           <AnimatedValue value={`${price} ${RIYAL}`} className="text-xl font-extrabold text-white" />
         </div>

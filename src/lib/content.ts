@@ -371,7 +371,7 @@ export const EDITIONS: {
   },
   {
     id: 'international',
-    label: 'النسخة الدولية (eSIM)',
+    label: 'النسخة الدولية ',
     short: 'الدولية',
     warranty: 'ضمان سنتين',
     price: 579900,
@@ -390,6 +390,26 @@ export const STORAGE_TIERS: { label: string; officialPrice: number }[] = [
   { label: '1TB', officialPrice: 909900 },
   { label: '2TB', officialPrice: 1209900 },
 ];
+
+/**
+ * Optional extras sold with the phone, keyed by the order API's addon `key`.
+ * Names and prices come from the API (GET /addons); this only adds the photo
+ * (from the product page on wafi.sa) and a one-line description.
+ */
+export const ADDONS_META: Record<string, { image: string; subtitle: string }> = {
+  charger_20w: {
+    image: '/images/addons/charger-20w.webp',
+    subtitle: 'شحن سريع للآيفون والآيباد',
+  },
+  earpods_usbc: {
+    image: '/images/addons/earpods-usbc.webp',
+    subtitle: 'مع ميكروفون وأزرار للتحكم',
+  },
+  protection_bundle: {
+    image: '/images/addons/protection-bundle.webp',
+    subtitle: 'مخصص لآيفون 18 برو ماكس',
+  },
+};
 
 /** Shipping to any city in the Kingdom, in halalas. Display only — the charge is the order's amount. */
 export const SHIPPING_FEE = 4900;
@@ -459,6 +479,9 @@ export const FLOW = {
         'شحن لكل مدن المملكة خلال ٣–٥ أيام بـ ٤٩ ريال. داخل الرياض: توصيل في نفس اليوم أو اليوم التالي.',
     },
     unavailable: 'غير متوفر',
+    addonsLabel: 'أضف إلى طلبك',
+    addonsOptional: 'اختياري',
+    addonsLine: 'الإضافات',
     shippingLine: 'الشحن',
     shippingFree: 'الاستلام من الفرع مجاناً',
     summaryLabel: 'اختيارك',
@@ -540,6 +563,7 @@ export const FLOW = {
     sub: 'ادفع بأمان عبر ميسر لتأكيد طلبك.',
     orderLabel: 'رقم الطلب',
     totalLabel: 'الإجمالي',
+    addonsLabel: 'الإضافات',
     loading: 'جارٍ تجهيز نموذج الدفع…',
     loadError: 'تعذّر تحميل نموذج الدفع. حدّث الصفحة وحاول مرة أخرى.',
     missingKey: 'الدفع غير مهيأ بعد (مفتاح ميسر غير موجود).',
@@ -557,6 +581,8 @@ export const FLOW = {
     checkAgain: 'تحديث الحالة',
     tryAgain: 'حاول مرة أخرى',
     done: 'تم',
+    viewInvoice: 'عرض الفاتورة',
+    invoiceNote: 'أرسلنا نسخة من الفاتورة إلى بريدك الإلكتروني.',
   },
   orderError: 'تعذّر إنشاء الطلب. تحقق من البيانات وحاول مرة أخرى.',
   networkError: 'تعذّر الاتصال بالخادم. تحقق من اتصالك وحاول مرة أخرى.',

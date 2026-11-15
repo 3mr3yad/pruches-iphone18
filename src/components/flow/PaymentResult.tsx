@@ -5,7 +5,7 @@ import { AnimatePresence, motion } from 'motion/react';
 import { backdrop, modalPanel } from '@/lib/motion';
 import { FLOW, RIYAL } from '@/lib/content';
 import { formatHalalas } from '@/lib/format';
-import { getOrder, verifyPayment, type OrderDetails } from '@/lib/api';
+import { getOrder, invoiceUrl, verifyPayment, type OrderDetails } from '@/lib/api';
 import { usePurchaseFlow } from '@/hooks/usePurchaseFlow';
 import { useFocusTrap, useScrollLock } from '@/hooks/useDialog';
 import { useMotionPrefs } from '@/hooks/useMotionPrefs';
@@ -168,7 +168,30 @@ export function PaymentResult() {
                 ) : null}
               </div>
 
-              {phase === 'paid' || phase === 'cancelled' ? (
+              {phase === 'paid' && ret.paymentId ? (
+                <div className="flex w-full flex-col gap-2.5">
+                  <a
+                    href={invoiceUrl(ret.orderNumber, ret.paymentId)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex h-[52px] w-full items-center justify-center gap-2 rounded-pill bg-pink text-base font-bold text-on-pink shadow-cta outline-offset-2 transition-[filter] duration-200 hover:brightness-105 lg:text-[18px]"
+                  >
+                    <svg viewBox="0 0 24 24" width={20} height={20} aria-hidden="true" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M7 3h7l5 5v13H7z" />
+                      <path d="M14 3v5h5M10 13h6M10 17h6" />
+                    </svg>
+                    {FLOW.result.viewInvoice}
+                  </a>
+                  <p className="text-xs text-muted">{FLOW.result.invoiceNote}</p>
+                  <button
+                    type="button"
+                    onClick={close}
+                    className="min-h-11 text-sm text-modal-body transition-colors hover:text-white"
+                  >
+                    {FLOW.result.done}
+                  </button>
+                </div>
+              ) : phase === 'paid' || phase === 'cancelled' ? (
                 <Button className="w-full" showArrow={false} onClick={close}>
                   {FLOW.result.done}
                 </Button>

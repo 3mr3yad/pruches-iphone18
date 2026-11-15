@@ -79,7 +79,9 @@ function callbackUrl(orderNumber: string): string {
 }
 
 export function StepPayment({ variant }: { variant: 'sheet' | 'modal' }) {
-  const { order, variant: device, activeColor, method, selectedBranch, activeEdition } = usePurchaseFlow();
+  const { order, variant: device, activeColor, method, selectedBranch, activeEdition, selectedAddons } =
+    usePurchaseFlow();
+  const addonNames = selectedAddons.map((addon) => addon.name_ar).join('، ');
   const editionLabel = activeEdition.label;
   const branchName = method === 'pickup' ? (selectedBranch?.name ?? '') : '';
   const formClass = `mysr-form-${useId().replace(/[^a-zA-Z0-9]/g, '')}`;
@@ -119,6 +121,7 @@ export function StepPayment({ variant }: { variant: 'sheet' | 'modal' }) {
             color: activeColor?.label ?? '',
             edition: editionLabel,
             ...(branchName ? { branch: branchName } : {}),
+            ...(addonNames ? { addons: addonNames } : {}),
           },
           ...(METHODS.includes('applepay')
             ? {
@@ -140,7 +143,7 @@ export function StepPayment({ variant }: { variant: 'sheet' | 'modal' }) {
       cancelled = true;
       if (host) host.innerHTML = '';
     };
-  }, [order, device, activeColor, branchName, editionLabel, formClass]);
+  }, [order, device, activeColor, branchName, editionLabel, addonNames, formClass]);
 
   if (!order) return null;
 
@@ -155,6 +158,19 @@ export function StepPayment({ variant }: { variant: 'sheet' | 'modal' }) {
           <span className="text-body">{FLOW.step3.orderLabel}</span>
           <bdi className="font-latin text-white">{order.order_number}</bdi>
         </div>
+        {selectedAddons.length ? (
+          <div className="flex flex-col gap-1 text-[13px]">
+            <span className="text-body">{FLOW.step3.addonsLabel}</span>
+            {selectedAddons.map((addon) => (
+              <div key={addon.id} className="flex items-start justify-between gap-3">
+                <span className="text-white">{addon.name_ar}</span>
+                <span className="shrink-0 text-white">
+                  {formatHalalas(addon.price)} {RIYAL}
+                </span>
+              </div>
+            ))}
+          </div>
+        ) : null}
         <div className="flex items-center justify-between">
           <span className="text-sm text-body">{FLOW.step3.totalLabel}</span>
           <span className="text-xl font-extrabold text-white">
