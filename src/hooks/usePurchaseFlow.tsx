@@ -24,12 +24,14 @@ import {
 } from '@/lib/api';
 import {
   BRANCH_LOCATIONS,
+  EDITIONS,
   FINISHES,
   FLOW,
   STORAGE_TIERS,
   branchDisplayName,
   branchLocationFor,
   finishIdFor,
+  type EditionId,
   type PickupTimeId,
 } from '@/lib/content';
 import { normalizePhone } from '@/lib/format';
@@ -56,10 +58,15 @@ export type BranchOption = {
   mapUrl: string | null;
 };
 
+/** An edition tile with the price it costs in the chosen configuration (halalas). */
+export type EditionOption = (typeof EDITIONS)[number] & { displayPrice: number };
+
 /** A storage tile: sellable tiers carry the API price, the rest Apple's official price. */
 export type StorageOption = { label: string; price: number; available: boolean };
 
 type Form = {
+  /** Regional edition (frame «الإصدار»). */
+  edition: EditionId;
   method: FulfillmentMethod;
   email: string;
   /** BranchOption.key of the chosen pickup branch. */
@@ -112,6 +119,7 @@ const initialState: State = {
   dir: 1,
   color: 'burgundy',
   storage: null,
+  edition: 'middle_east',
   /** Figma 494:153 preselects «الشحن». */
   method: 'shipping',
   email: '',
@@ -263,6 +271,11 @@ type FlowApi = State & {
   /** Every Pro Max tier for the active colour, sellable or not. */
   storageOptions: StorageOption[];
   activeStorage: string | null;
+  /** Both editions with their price in the chosen configuration. */
+  editionOptions: EditionOption[];
+  activeEdition: EditionOption;
+  /** What the chosen configuration costs (halalas), shown in step 1. */
+  unitPrice: number | null;
   variant: Variant | null;
   fieldErrors: FieldErrors;
   canContinue: boolean;
@@ -343,13 +356,28 @@ export function PurchaseFlowProvider({ children }: { children: ReactNode }) {
   const storages = useMemo(() => [...new Set(variants.map((v) => v.storage_label))], [variants]);
   const activeStorage =
     state.storage && storages.includes(state.storage) ? state.storage : (storages[0] ?? null);
+  // Once the API sells editions as variants, only the chosen edition's count.
+  const apiHasEditions = variants.some((v) => Boolean(v.edition));
+  const editionVariants = useMemo(
+    () => (apiHasEditions ? variants.filter((v) => v.edition === state.edition) : variants),
+    [variants, apiHasEditions, state.edition],
+  );
+  const editionDef = EDITIONS.find((e) => e.id === state.edition) ?? EDITIONS[0];
+  /** Price for a size: the API's per-edition variant, else the edition's 256GB price. */
+  const priceFor = useCallback(
+    (label: string, pool: Variant[], colorKey: string | undefined, fallbackEdition = editionDef) => {
+      const v =
+        pool.find((x) => x.color === colorKey && x.storage_label === label) ??
+        pool.find((x) => x.storage_label === label);
+      if (!v) return undefined;
+      return apiHasEditions || label !== '256GB' ? v.price : fallbackEdition.price;
+    },
+    [apiHasEditions, editionDef],
+  );
+
   const storageOptions = useMemo<StorageOption[]>(() => {
     if (!activeColor) return [];
-    const priceOf = (label: string) =>
-      (
-        variants.find((v) => v.color === activeColor.key && v.storage_label === label) ??
-        variants.find((v) => v.storage_label === label)
-      )?.price;
+    const priceOf = (label: string) => priceFor(label, editionVariants, activeColor.key);
     const tiers = STORAGE_TIERS.map(({ label, officialPrice }) => {
       const price = priceOf(label);
       return price === undefined
@@ -361,15 +389,29 @@ export function PurchaseFlowProvider({ children }: { children: ReactNode }) {
       .filter((label) => !STORAGE_TIERS.some((tier) => tier.label === label))
       .map((label) => ({ label, price: priceOf(label) ?? 0, available: true }));
     return [...tiers, ...extra];
-  }, [variants, activeColor, storages]);
+  }, [editionVariants, activeColor, storages, priceFor]);
   // Every colour can be ordered. Until the API has a variant per colour, a
   // colour without its own falls back to the variant for the chosen size
   // (same product and price); the chosen colour still travels in the
   // payment's description and metadata (see Payment.tsx).
   const variant =
-    variants.find((v) => v.color === activeColor?.key && v.storage_label === activeStorage) ??
-    variants.find((v) => v.storage_label === activeStorage) ??
+    editionVariants.find((v) => v.color === activeColor?.key && v.storage_label === activeStorage) ??
+    editionVariants.find((v) => v.storage_label === activeStorage) ??
     null;
+
+  const editionOptions = useMemo<EditionOption[]>(
+    () =>
+      EDITIONS.map((edition) => {
+        const pool = apiHasEditions ? variants.filter((v) => v.edition === edition.id) : variants;
+        return {
+          ...edition,
+          displayPrice: priceFor(activeStorage ?? '256GB', pool, activeColor?.key, edition) ?? edition.price,
+        };
+      }),
+    [variants, apiHasEditions, activeStorage, activeColor, priceFor],
+  );
+  const activeEdition = editionOptions.find((e) => e.id === state.edition) ?? editionOptions[0];
+  const unitPrice = variant ? activeEdition.displayPrice : null;
 
   const branchOptions = useMemo<BranchOption[]>(() => {
     const known = BRANCH_LOCATIONS.map((location) => {
@@ -417,6 +459,7 @@ export function PurchaseFlowProvider({ children }: { children: ReactNode }) {
       customer_name: state.name.trim(),
       customer_phone: phone,
       customer_email: state.email.trim(),
+      edition: state.edition,
     };
     const body: CreateOrderBody =
       state.method === 'pickup'
@@ -484,6 +527,9 @@ export function PurchaseFlowProvider({ children }: { children: ReactNode }) {
       storages,
       storageOptions,
       activeStorage,
+      editionOptions,
+      activeEdition,
+      unitPrice,
       variant,
       fieldErrors,
       canContinue,
@@ -512,6 +558,9 @@ export function PurchaseFlowProvider({ children }: { children: ReactNode }) {
       storages,
       storageOptions,
       activeStorage,
+      editionOptions,
+      activeEdition,
+      unitPrice,
       variant,
       fieldErrors,
       canContinue,

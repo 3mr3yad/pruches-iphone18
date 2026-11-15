@@ -16,6 +16,12 @@ export type Variant = {
   storage_label: string;
   /** Halalas. */
   price: number;
+  /**
+   * Regional edition, once the API sells editions as separate variants
+   * ("middle_east" | "international"). Absent today: the page then prices the
+   * edition from EDITIONS in content.ts and sends `edition` with the order.
+   */
+  edition?: string | null;
 };
 
 export type Branch = {
@@ -33,6 +39,8 @@ export type CreateOrderBody = {
   customer_phone: string;
   /** Required by the API; used for the post-payment confirmation e-mail. */
   customer_email: string;
+  /** Chosen regional edition: "middle_east" | "international". */
+  edition?: string;
   fulfillment_method: FulfillmentMethod;
 } & (
   | {

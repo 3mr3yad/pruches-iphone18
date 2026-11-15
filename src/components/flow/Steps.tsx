@@ -107,6 +107,9 @@ export function StepColorStorage({ variant }: { variant: Variant }) {
     method,
     setField,
     storageOptions,
+    editionOptions,
+    activeEdition,
+    unitPrice,
   } = usePurchaseFlow();
   const activeFulfillment = FULFILLMENTS.find((item) => item.id === method) ?? FULFILLMENTS[1];
   const isModal = variant === 'modal';
@@ -135,8 +138,8 @@ export function StepColorStorage({ variant }: { variant: Variant }) {
     );
   }
 
-  // Same price for every colour, so show it even before a colour has its variant.
-  const shownPrice = selected?.price ?? storageOptions.find((o) => o.available && o.label === activeStorage)?.price;
+  // The chosen edition's price (the variant itself is shared until the API sells editions).
+  const shownPrice = unitPrice ?? storageOptions.find((o) => o.available && o.label === activeStorage)?.price;
   const price = shownPrice === undefined ? '—' : formatHalalas(shownPrice);
 
 
@@ -238,6 +241,45 @@ export function StepColorStorage({ variant }: { variant: Variant }) {
         >
           {FLOW.step1.storageNote}
         </p>
+      </div>
+
+      {/* Edition — «الإصدار»: regional version, each with its own price. */}
+      <div className="flex flex-col gap-2.5 md:gap-2">
+        <LabelRow label={FLOW.step1.editionLabel} value={activeEdition.label} variant={variant} />
+        <div
+          role="radiogroup"
+          aria-label={FLOW.step1.editionLabel}
+          className="grid w-full grid-cols-2 gap-2.5 md:gap-3"
+        >
+          {editionOptions.map((edition) => {
+            const isSelected = edition.id === activeEdition.id;
+            const priceText = `${formatHalalas(edition.displayPrice)} ${RIYAL}`;
+            return (
+              <OptionTile
+                key={edition.id}
+                selected={isSelected}
+                onSelect={() => setField({ edition: edition.id })}
+                label={`${edition.label} · ${edition.warranty} · ${priceText}`}
+                variant={variant}
+                mark="inline"
+                className="min-h-[60px] justify-start gap-2.5 px-3 py-2 md:min-h-[58px]"
+              >
+                <span className="flex min-w-0 flex-col items-start gap-0.5 text-start">
+                  <span
+                    className={`text-[13px] font-bold leading-snug md:text-[14px] ${
+                      isSelected ? 'text-white md:text-pink' : 'text-body md:text-white'
+                    }`}
+                  >
+                    {edition.label}
+                  </span>
+                  <span className={`text-[11px] leading-tight md:text-xs ${isSelected ? 'text-pink' : 'text-muted'}`}>
+                    {edition.warranty} · {priceText}
+                  </span>
+                </span>
+              </OptionTile>
+            );
+          })}
+        </div>
       </div>
 
       {/* Fulfillment method — frame 494:153 */}

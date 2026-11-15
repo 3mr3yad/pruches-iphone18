@@ -33,13 +33,6 @@ const METHODS = (process.env.NEXT_PUBLIC_MOYASAR_METHODS ?? 'creditcard')
   .map((method) => method.trim())
   .filter(Boolean);
 
-/**
- * ⚠️ TEMPORARY — live payment test. While set, Moyasar charges this amount
- * (halalas: 100 = 1 SAR) instead of the order's amount. Set back to `null`
- * after the test to charge the real order amount again.
- */
-const TEST_CHARGE_HALALAS: number | null = 100;
-
 /** Query param carrying the order number back from Moyasar's redirect. */
 export const ORDER_PARAM = 'order';
 
@@ -86,7 +79,8 @@ function callbackUrl(orderNumber: string): string {
 }
 
 export function StepPayment({ variant }: { variant: 'sheet' | 'modal' }) {
-  const { order, variant: device, activeColor, method, selectedBranch } = usePurchaseFlow();
+  const { order, variant: device, activeColor, method, selectedBranch, activeEdition } = usePurchaseFlow();
+  const editionLabel = activeEdition.label;
   const branchName = method === 'pickup' ? (selectedBranch?.name ?? '') : '';
   const formClass = `mysr-form-${useId().replace(/[^a-zA-Z0-9]/g, '')}`;
   const hostRef = useRef<HTMLDivElement>(null);
@@ -102,13 +96,13 @@ export function StepPayment({ variant }: { variant: 'sheet' | 'modal' }) {
     loadMpf()
       .then(() => {
         if (cancelled || !window.Moyasar) return;
-        const description = [PRODUCT_NAME_AR, activeColor?.label, device?.storage_label, branchName, order.order_number]
+        const description = [PRODUCT_NAME_AR, activeColor?.label, device?.storage_label, editionLabel, branchName, order.order_number]
           .filter(Boolean)
           .join(' · ');
 
         window.Moyasar.init({
           element: `.${formClass}`,
-          amount: TEST_CHARGE_HALALAS ?? order.amount,
+          amount: order.amount,
           currency: order.currency || 'SAR',
           description,
           publishable_api_key: PUBLISHABLE_KEY,
@@ -123,6 +117,7 @@ export function StepPayment({ variant }: { variant: 'sheet' | 'modal' }) {
           metadata: {
             order_number: order.order_number,
             color: activeColor?.label ?? '',
+            edition: editionLabel,
             ...(branchName ? { branch: branchName } : {}),
           },
           ...(METHODS.includes('applepay')
@@ -145,7 +140,7 @@ export function StepPayment({ variant }: { variant: 'sheet' | 'modal' }) {
       cancelled = true;
       if (host) host.innerHTML = '';
     };
-  }, [order, device, activeColor, branchName, formClass]);
+  }, [order, device, activeColor, branchName, editionLabel, formClass]);
 
   if (!order) return null;
 
@@ -163,7 +158,7 @@ export function StepPayment({ variant }: { variant: 'sheet' | 'modal' }) {
         <div className="flex items-center justify-between">
           <span className="text-sm text-body">{FLOW.step3.totalLabel}</span>
           <span className="text-xl font-extrabold text-white">
-            {formatHalalas(TEST_CHARGE_HALALAS ?? order.amount)} {RIYAL}
+            {formatHalalas(order.amount)} {RIYAL}
           </span>
         </div>
       </div>

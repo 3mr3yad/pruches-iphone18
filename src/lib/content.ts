@@ -346,6 +346,36 @@ export const FULFILLMENTS: { id: FulfillmentId; label: string }[] = [
 /** How many upcoming pickup days to offer. Fridays are skipped (frames 467:449 / 463:157). */
 export const PICKUP_DAYS_SHOWN = 6;
 
+export type EditionId = 'middle_east' | 'international';
+
+/**
+ * Regional editions (frame «الإصدار»), both with a two-year warranty. `price`
+ * is the 256GB price in halalas, used until the order API sells editions as
+ * separate variants (Variant.edition); the charge is always the order's amount.
+ */
+export const EDITIONS: {
+  id: EditionId;
+  label: string;
+  short: string;
+  warranty: string;
+  price: number;
+}[] = [
+  {
+    id: 'middle_east',
+    label: 'نسخة الشرق الأوسط',
+    short: 'الشرق الأوسط',
+    warranty: 'ضمان سنتين',
+    price: 619900,
+  },
+  {
+    id: 'international',
+    label: 'النسخة الدولية (eSIM)',
+    short: 'الدولية',
+    warranty: 'ضمان سنتين',
+    price: 579900,
+  },
+];
+
 /**
  * Every Pro Max storage tier, with Apple's official Saudi price in halalas
  * (apple.com/sa, checked 2026-11-04). A tier the order API doesn't sell for
@@ -419,6 +449,7 @@ export const FLOW = {
     colorLabel: 'اللون',
     storageLabel: 'سعة التخزين',
     storageNote: 'المتوفر حالياً سعة 256 جيجابايت فقط.',
+    editionLabel: 'الإصدار',
     fulfillmentLabel: 'طريقة التوصيل',
     fulfillmentNotes: {
       pickup: 'استلام مجاني من فرعينا في الرياض، من السبت إلى الخميس، من ٨ إلى ١٠ مساءً.',
