@@ -1,8 +1,9 @@
 /**
  * Client for the Wafi iPhone 18 order API.
  *
- * Every endpoint sends `Access-Control-Allow-Origin: *`, so the static site
- * calls it straight from the browser. Amounts are in halalas (599900 = 5,999 SAR).
+ * The API allows CORS from https://iphone18.wafi.sa only (localhost is
+ * blocked). Amounts are in halalas (599900 = 5,999 SAR). The order's
+ * `amount` is final: the backend adds the 4900 shipping fee itself.
  */
 
 export const API_BASE = 'https://wafii.sa/wafiservices/api/iphone18';
@@ -17,9 +18,10 @@ export type Variant = {
   /** Halalas. */
   price: number;
   /**
-   * Regional edition, once the API sells editions as separate variants
-   * ("middle_east" | "international"). Absent today: the page then prices the
-   * edition from EDITIONS in content.ts and sends `edition` with the order.
+   * Regional edition: "middle_east" | "international". Each (color, edition)
+   * pair is its own row with its own id and price, so the chosen edition is
+   * carried by `variant_id` alone. Optional only so an older catalog without
+   * editions still loads (the page then prices from EDITIONS in content.ts).
    */
   edition?: string | null;
 };
@@ -39,8 +41,6 @@ export type CreateOrderBody = {
   customer_phone: string;
   /** Required by the API; used for the post-payment confirmation e-mail. */
   customer_email: string;
-  /** Chosen regional edition: "middle_east" | "international". */
-  edition?: string;
   fulfillment_method: FulfillmentMethod;
 } & (
   | {

@@ -258,8 +258,13 @@ export function StepColorStorage({ variant }: { variant: Variant }) {
               <OptionTile
                 key={edition.id}
                 selected={isSelected}
+                disabled={!edition.available}
                 onSelect={() => setField({ edition: edition.id })}
-                label={`${edition.label} · ${edition.warranty} · ${priceText}`}
+                label={
+                  edition.available
+                    ? `${edition.label} · ${edition.warranty} · ${priceText}`
+                    : `${edition.label} · ${FLOW.step1.unavailable}`
+                }
                 variant={variant}
                 mark="inline"
                 className="min-h-[60px] justify-start gap-2.5 px-3 py-2 md:min-h-[58px]"
@@ -273,7 +278,7 @@ export function StepColorStorage({ variant }: { variant: Variant }) {
                     {edition.label}
                   </span>
                   <span className={`text-[11px] leading-tight md:text-xs ${isSelected ? 'text-pink' : 'text-muted'}`}>
-                    {edition.warranty} · {priceText}
+                    {edition.available ? `${edition.warranty} · ${priceText}` : FLOW.step1.unavailable}
                   </span>
                 </span>
               </OptionTile>

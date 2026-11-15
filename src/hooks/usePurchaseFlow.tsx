@@ -59,7 +59,11 @@ export type BranchOption = {
 };
 
 /** An edition tile with the price it costs in the chosen configuration (halalas). */
-export type EditionOption = (typeof EDITIONS)[number] & { displayPrice: number };
+export type EditionOption = (typeof EDITIONS)[number] & {
+  displayPrice: number;
+  /** False when the catalog has editions but none for this one yet. */
+  available: boolean;
+};
 
 /** A storage tile: sellable tiers carry the API price, the rest Apple's official price. */
 export type StorageOption = { label: string; price: number; available: boolean };
@@ -356,13 +360,22 @@ export function PurchaseFlowProvider({ children }: { children: ReactNode }) {
   const storages = useMemo(() => [...new Set(variants.map((v) => v.storage_label))], [variants]);
   const activeStorage =
     state.storage && storages.includes(state.storage) ? state.storage : (storages[0] ?? null);
-  // Once the API sells editions as variants, only the chosen edition's count.
+  // The API sells each (color, edition) as its own variant: only rows of the
+  // chosen edition count, so variant_id alone carries the edition and price.
   const apiHasEditions = variants.some((v) => Boolean(v.edition));
-  const editionVariants = useMemo(
-    () => (apiHasEditions ? variants.filter((v) => v.edition === state.edition) : variants),
-    [variants, apiHasEditions, state.edition],
+  const editionSold = useCallback(
+    (id: EditionId) => !apiHasEditions || variants.some((v) => v.edition === id),
+    [apiHasEditions, variants],
   );
-  const editionDef = EDITIONS.find((e) => e.id === state.edition) ?? EDITIONS[0];
+  // If the chosen edition isn't sold yet, fall back to the first one that is.
+  const editionId: EditionId = editionSold(state.edition)
+    ? state.edition
+    : (EDITIONS.find((e) => editionSold(e.id))?.id ?? state.edition);
+  const editionVariants = useMemo(
+    () => (apiHasEditions ? variants.filter((v) => v.edition === editionId) : variants),
+    [variants, apiHasEditions, editionId],
+  );
+  const editionDef = EDITIONS.find((e) => e.id === editionId) ?? EDITIONS[0];
   /** Price for a size: the API's per-edition variant, else the edition's 256GB price. */
   const priceFor = useCallback(
     (label: string, pool: Variant[], colorKey: string | undefined, fallbackEdition = editionDef) => {
@@ -406,11 +419,12 @@ export function PurchaseFlowProvider({ children }: { children: ReactNode }) {
         return {
           ...edition,
           displayPrice: priceFor(activeStorage ?? '256GB', pool, activeColor?.key, edition) ?? edition.price,
+          available: editionSold(edition.id),
         };
       }),
-    [variants, apiHasEditions, activeStorage, activeColor, priceFor],
+    [variants, apiHasEditions, activeStorage, activeColor, priceFor, editionSold],
   );
-  const activeEdition = editionOptions.find((e) => e.id === state.edition) ?? editionOptions[0];
+  const activeEdition = editionOptions.find((e) => e.id === editionId) ?? editionOptions[0];
   const unitPrice = variant ? activeEdition.displayPrice : null;
 
   const branchOptions = useMemo<BranchOption[]>(() => {
@@ -459,7 +473,6 @@ export function PurchaseFlowProvider({ children }: { children: ReactNode }) {
       customer_name: state.name.trim(),
       customer_phone: phone,
       customer_email: state.email.trim(),
-      edition: state.edition,
     };
     const body: CreateOrderBody =
       state.method === 'pickup'

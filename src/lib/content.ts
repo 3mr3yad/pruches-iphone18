@@ -349,9 +349,11 @@ export const PICKUP_DAYS_SHOWN = 6;
 export type EditionId = 'middle_east' | 'international';
 
 /**
- * Regional editions (frame «الإصدار»), both with a two-year warranty. `price`
- * is the 256GB price in halalas, used until the order API sells editions as
- * separate variants (Variant.edition); the charge is always the order's amount.
+ * Regional editions (frame «الإصدار»), both with a two-year warranty (copy
+ * only; the API has no warranty field). The catalog sells each edition as its
+ * own variant (Variant.edition) with its own price; `price` here (256GB, in
+ * halalas) is only a fallback for a catalog without editions. The charge is
+ * always the order's amount.
  */
 export const EDITIONS: {
   id: EditionId;
