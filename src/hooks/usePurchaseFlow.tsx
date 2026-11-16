@@ -29,6 +29,7 @@ import {
   EDITIONS,
   FINISHES,
   FLOW,
+  MAX_ADDON_QUANTITY,
   STORAGE_TIERS,
   branchDisplayName,
   branchLocationFor,
@@ -38,6 +39,9 @@ import {
 } from '@/lib/content';
 import { normalizePhone } from '@/lib/format';
 import type { CountryCode } from 'libphonenumber-js/min';
+
+/** An add-on the customer chose, with how many of it. */
+export type SelectedAddon = Addon & { quantity: number };
 
 export type Step = 1 | 2 | 3;
 export type LoadStatus = 'loading' | 'ready' | 'error';
@@ -96,8 +100,8 @@ type State = Form & {
   /** An API colour key, or a finish id picked in the Finishes section before variants load. */
   color: string;
   storage: string | null;
-  /** Ids of the optional add-ons the customer ticked. */
-  addonIds: number[];
+  /** Add-on id → how many the customer wants (absent = not selected). */
+  addonQty: Record<number, number>;
   showErrors: boolean;
   /** Fields the user has left at least once — gates the inline hints. */
   touched: Partial<Record<FieldKey, boolean>>;
@@ -115,6 +119,7 @@ type Action =
   | { type: 'color'; value: string }
   | { type: 'storage'; value: string }
   | { type: 'toggleAddon'; id: number }
+  | { type: 'addonQty'; id: number; quantity: number }
   | { type: 'field'; patch: Partial<Form> }
   | { type: 'showErrors' }
   | { type: 'touch'; field: FieldKey }
@@ -128,7 +133,7 @@ const initialState: State = {
   dir: 1,
   color: 'burgundy',
   storage: null,
-  addonIds: [],
+  addonQty: {},
   edition: 'middle_east',
   /** Figma 494:153 preselects «الشحن». */
   method: 'shipping',
@@ -168,12 +173,16 @@ function reducer(state: State, action: Action): State {
     case 'storage':
       return { ...state, storage: action.value };
     case 'toggleAddon':
-      return {
-        ...state,
-        addonIds: state.addonIds.includes(action.id)
-          ? state.addonIds.filter((id) => id !== action.id)
-          : [...state.addonIds, action.id],
-      };
+      return reducer(state, {
+        type: 'addonQty',
+        id: action.id,
+        quantity: state.addonQty[action.id] ? 0 : 1,
+      });
+    case 'addonQty': {
+      const quantity = Math.min(MAX_ADDON_QUANTITY, Math.max(0, Math.round(action.quantity)));
+      const { [action.id]: _removed, ...rest } = state.addonQty;
+      return { ...state, addonQty: quantity > 0 ? { ...rest, [action.id]: quantity } : rest };
+    }
     case 'field':
       return { ...state, ...action.patch, error: null };
     case 'showErrors':
@@ -284,11 +293,14 @@ type FlowApi = State & {
   reloadVariants: () => void;
   /** Optional extras offered with the phone (empty if the API has none or failed). */
   addons: Addon[];
-  /** The ticked add-ons, in catalog order. */
-  selectedAddons: Addon[];
-  /** Sum of the ticked add-ons (halalas). */
+  /** The chosen add-ons with their quantity, in catalog order. */
+  selectedAddons: SelectedAddon[];
+  /** Sum of price × quantity over the chosen add-ons (halalas). */
   addonsTotal: number;
+  /** Selects an add-on (quantity 1) or removes it. */
   toggleAddon: (id: number) => void;
+  /** Sets an add-on's quantity (0 removes it; capped at MAX_ADDON_QUANTITY). */
+  setAddonQuantity: (id: number, quantity: number) => void;
   colors: ColorOption[];
   activeColor: ColorOption | null;
   storages: string[];
@@ -379,11 +391,14 @@ export function PurchaseFlowProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const selectedAddons = useMemo(
-    () => addons.filter((addon) => state.addonIds.includes(addon.id)),
-    [addons, state.addonIds],
+  const selectedAddons = useMemo<SelectedAddon[]>(
+    () =>
+      addons
+        .filter((addon) => state.addonQty[addon.id])
+        .map((addon) => ({ ...addon, quantity: state.addonQty[addon.id] })),
+    [addons, state.addonQty],
   );
-  const addonsTotal = selectedAddons.reduce((sum, addon) => sum + addon.price, 0);
+  const addonsTotal = selectedAddons.reduce((sum, addon) => sum + addon.price * addon.quantity, 0);
 
   const colors = useMemo(() => colorOptions(variants), [variants]);
   const activeColor = useMemo(() => resolveColor(colors, state.color), [colors, state.color]);
@@ -504,7 +519,9 @@ export function PurchaseFlowProvider({ children }: { children: ReactNode }) {
       customer_name: state.name.trim(),
       customer_phone: phone,
       customer_email: state.email.trim(),
-      ...(selectedAddons.length ? { addon_ids: selectedAddons.map((addon) => addon.id) } : {}),
+      ...(selectedAddons.length
+        ? { addons: selectedAddons.map((addon) => ({ id: addon.id, quantity: addon.quantity })) }
+        : {}),
     };
     const body: CreateOrderBody =
       state.method === 'pickup'
@@ -571,6 +588,7 @@ export function PurchaseFlowProvider({ children }: { children: ReactNode }) {
       selectedAddons,
       addonsTotal,
       toggleAddon: (id) => dispatch({ type: 'toggleAddon', id }),
+      setAddonQuantity: (id, quantity) => dispatch({ type: 'addonQty', id, quantity }),
       colors,
       activeColor,
       storages,

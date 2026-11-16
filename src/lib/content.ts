@@ -411,6 +411,9 @@ export const ADDONS_META: Record<string, { image: string; subtitle: string }> = 
   },
 };
 
+/** Most units of one add-on per order (the order API caps it at 10 too). */
+export const MAX_ADDON_QUANTITY = 10;
+
 /** Shipping to any city in the Kingdom, in halalas. Display only — the charge is the order's amount. */
 export const SHIPPING_FEE = 4900;
 
@@ -482,6 +485,10 @@ export const FLOW = {
     addonsLabel: 'أضف إلى طلبك',
     addonsOptional: 'اختياري',
     addonsLine: 'الإضافات',
+    quantity: 'الكمية',
+    quantityIncrease: 'زيادة الكمية',
+    quantityDecrease: 'تقليل الكمية',
+    quantityRemove: 'إزالة',
     shippingLine: 'الشحن',
     shippingFree: 'الاستلام من الفرع مجاناً',
     summaryLabel: 'اختيارك',

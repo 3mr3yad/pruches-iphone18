@@ -81,7 +81,9 @@ function callbackUrl(orderNumber: string): string {
 export function StepPayment({ variant }: { variant: 'sheet' | 'modal' }) {
   const { order, variant: device, activeColor, method, selectedBranch, activeEdition, selectedAddons } =
     usePurchaseFlow();
-  const addonNames = selectedAddons.map((addon) => addon.name_ar).join('، ');
+  const addonNames = selectedAddons
+    .map((addon) => (addon.quantity > 1 ? `${addon.name_ar} × ${addon.quantity}` : addon.name_ar))
+    .join('، ');
   const editionLabel = activeEdition.label;
   const branchName = method === 'pickup' ? (selectedBranch?.name ?? '') : '';
   const formClass = `mysr-form-${useId().replace(/[^a-zA-Z0-9]/g, '')}`;
@@ -163,9 +165,14 @@ export function StepPayment({ variant }: { variant: 'sheet' | 'modal' }) {
             <span className="text-body">{FLOW.step3.addonsLabel}</span>
             {selectedAddons.map((addon) => (
               <div key={addon.id} className="flex items-start justify-between gap-3">
-                <span className="text-white">{addon.name_ar}</span>
+                <span className="text-white">
+                  {addon.name_ar}
+                  {addon.quantity > 1 ? (
+                    <bdi className="ms-1 text-body">× {addon.quantity}</bdi>
+                  ) : null}
+                </span>
                 <span className="shrink-0 text-white">
-                  {formatHalalas(addon.price)} {RIYAL}
+                  {formatHalalas(addon.price * addon.quantity)} {RIYAL}
                 </span>
               </div>
             ))}

@@ -9,6 +9,7 @@ import {
   FINISHES,
   FLOW,
   FULFILLMENTS,
+  MAX_ADDON_QUANTITY,
   PICKUP_DAYS_SHOWN,
   PICKUP_TIMES,
   RIYAL,
@@ -95,9 +96,9 @@ export function Spinner({ className = '' }: { className?: string }) {
 
 /* ---------------------------- optional add-ons ---------------------------- */
 
-/** Optional extras ticked on top of the phone (multi-select, all optional). */
+/** Optional extras on top of the phone: tick one, then pick how many. */
 function AddonsPicker({ variant }: { variant: Variant }) {
-  const { addons, selectedAddons, addonsTotal, toggleAddon } = usePurchaseFlow();
+  const { addons, selectedAddons, addonsTotal, toggleAddon, setAddonQuantity } = usePurchaseFlow();
   const { reduced } = useMotionPrefs();
   const isModal = variant === 'modal';
   if (addons.length === 0) return null;
@@ -121,7 +122,8 @@ function AddonsPicker({ variant }: { variant: Variant }) {
       <div className="flex w-full flex-col gap-2">
         {addons.map((addon) => {
           const meta = ADDONS_META[addon.key];
-          const checked = selectedAddons.some((item) => item.id === addon.id);
+          const quantity = selectedAddons.find((item) => item.id === addon.id)?.quantity ?? 0;
+          const checked = quantity > 0;
           const priceText = `${formatHalalas(addon.price)} ${RIYAL}`;
           const tone =
             variant === 'sheet'
@@ -132,8 +134,11 @@ function AddonsPicker({ variant }: { variant: Variant }) {
                 ? 'border-[1.5px] border-pink bg-modal-tile-on'
                 : 'border border-modal-tile-line bg-modal-tile';
           return (
-            <motion.button
+            <div
               key={addon.id}
+              className={`flex w-full flex-col rounded-2xl transition-colors duration-200 ease-quint ${tone}`}
+            >
+            <motion.button
               type="button"
               role="checkbox"
               aria-checked={checked}
@@ -141,7 +146,7 @@ function AddonsPicker({ variant }: { variant: Variant }) {
               onClick={() => toggleAddon(addon.id)}
               whileTap={reduced ? undefined : { scale: 0.98 }}
               transition={{ duration: 0.2, ease: EASE }}
-              className={`flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-start transition-colors duration-200 ease-quint ${tone}`}
+              className="flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-start"
             >
               <CheckMark checked={checked} />
               <span className="relative size-14 shrink-0 overflow-hidden rounded-xl bg-white">
@@ -161,9 +166,74 @@ function AddonsPicker({ variant }: { variant: Variant }) {
                 +{priceText}
               </span>
             </motion.button>
+            {checked ? (
+              <QuantityRow
+                name={addon.name_ar}
+                quantity={quantity}
+                lineTotal={addon.price * quantity}
+                onChange={(next) => setAddonQuantity(addon.id, next)}
+                isModal={isModal}
+              />
+            ) : null}
+            </div>
           );
         })}
       </div>
+    </div>
+  );
+}
+
+/** −/+ stepper under a chosen add-on. «−» at 1 removes the add-on. */
+function QuantityRow({
+  name,
+  quantity,
+  lineTotal,
+  onChange,
+  isModal,
+}: {
+  name: string;
+  quantity: number;
+  lineTotal: number;
+  onChange: (quantity: number) => void;
+  isModal: boolean;
+}) {
+  const atMax = quantity >= MAX_ADDON_QUANTITY;
+  const stepBtn =
+    'grid size-8 place-items-center rounded-full border border-white/20 text-white transition-colors duration-200 hover:border-pink hover:text-pink disabled:pointer-events-none disabled:opacity-35';
+  return (
+    <div className="flex items-center justify-between gap-3 border-t border-white/10 px-3 py-2">
+      <div className="flex items-center gap-2.5">
+        <span className={`text-xs ${isModal ? 'text-modal-body' : 'text-muted'}`}>{FLOW.step1.quantity}</span>
+        <div className="flex items-center gap-2" dir="ltr">
+          <button
+            type="button"
+            className={stepBtn}
+            onClick={() => onChange(quantity - 1)}
+            aria-label={`${quantity === 1 ? FLOW.step1.quantityRemove : FLOW.step1.quantityDecrease} · ${name}`}
+          >
+            <svg viewBox="0 0 16 16" width={12} height={12} fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" aria-hidden>
+              <path d="M3.5 8h9" />
+            </svg>
+          </button>
+          <span className="min-w-6 text-center text-sm font-bold tabular-nums text-white" aria-live="polite">
+            {quantity}
+          </span>
+          <button
+            type="button"
+            className={stepBtn}
+            onClick={() => onChange(quantity + 1)}
+            disabled={atMax}
+            aria-label={`${FLOW.step1.quantityIncrease} · ${name}`}
+          >
+            <svg viewBox="0 0 16 16" width={12} height={12} fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" aria-hidden>
+              <path d="M3.5 8h9M8 3.5v9" />
+            </svg>
+          </button>
+        </div>
+      </div>
+      {quantity > 1 ? (
+        <AnimatedValue value={`${formatHalalas(lineTotal)} ${RIYAL}`} className="text-[13px] font-bold text-pink md:text-sm" />
+      ) : null}
     </div>
   );
 }

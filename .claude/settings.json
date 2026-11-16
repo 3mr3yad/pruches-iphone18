@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//c/xampp/htdocs/Wafi-world/**)",
+      "PowerShell(npx tsc --noEmit -p . 2>&1)",
+      "PowerShell(npx eslint src/components/flow src/hooks src/lib 2>&1)"
+    ],
+    "additionalDirectories": [
+      "c:\\xampp\\htdocs\\Wafi-world\\wafi-service-center-backend\\database\\migrations",
+      "c:\\xampp\\htdocs\\Wafi-world\\wafi-service-center-backend\\app\\Models",
+      "c:\\xampp\\htdocs\\Wafi-world\\wafi-service-center-backend\\app\\Http\\Controllers\\Api",
+      "c:\\xampp\\htdocs\\Wafi-world\\wafi-service-center-backend\\app\\Http\\Controllers",
+      "c:\\xampp\\htdocs\\Wafi-world\\wafi-service-center-backend\\resources\\views\\emails",
+      "c:\\xampp\\htdocs\\Wafi-world\\wafi-service-center-backend\\resources\\views\\admin\\iphone18-orders"
+    ]
+  }
+}

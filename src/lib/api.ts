@@ -62,8 +62,8 @@ export type CreateOrderBody = {
   /** Required by the API; used for the post-payment confirmation e-mail. */
   customer_email: string;
   fulfillment_method: FulfillmentMethod;
-  /** Optional extras; the backend prices them and adds them to the order's amount. */
-  addon_ids?: number[];
+  /** Optional extras with quantities; the backend prices them and adds them to the order's amount. */
+  addons?: { id: number; quantity: number }[];
 } & (
   | {
       fulfillment_method: 'pickup';
