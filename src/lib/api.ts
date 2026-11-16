@@ -149,7 +149,12 @@ export async function getVariants(): Promise<Variant[]> {
 }
 
 export async function getAddons(): Promise<Addon[]> {
-  return unwrap(await request<{ data: Addon[] }>(`${API_BASE}/addons`));
+  const addons = unwrap(await request<{ data: Addon[] }>(`${API_BASE}/addons`));
+  // The API names the EarPods «… USB-C – إيربودز»; drop the trailing «– إيربودز».
+  return addons.map((addon) => ({
+    ...addon,
+    name_ar: addon.name_ar.replace(/\s*[-–—]?\s*إيربودز\s*/g, ' ').trim(),
+  }));
 }
 
 export async function getBranches(): Promise<Branch[]> {
