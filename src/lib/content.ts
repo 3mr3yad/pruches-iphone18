@@ -579,6 +579,7 @@ export const FLOW = {
     orderLabel: 'رقم الطلب',
     totalLabel: 'الإجمالي',
     phonesLabel: 'الأجهزة',
+    perPiece: 'للقطعة',
     addonsLabel: 'الإضافات',
     loading: 'جارٍ تجهيز نموذج الدفع…',
     loadError: 'تعذّر تحميل نموذج الدفع. حدّث الصفحة وحاول مرة أخرى.',

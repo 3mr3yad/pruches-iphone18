@@ -169,15 +169,16 @@ export function StepPayment({ variant }: { variant: 'sheet' | 'modal' }) {
           <div className="flex flex-col gap-1 text-[13px]">
             <span className="text-body">{FLOW.step3.phonesLabel}</span>
             {phoneLines.map((line) => (
-              <div key={line.id} className="flex items-start justify-between gap-3">
-                <span className="text-white">
-                  {line.colorLabel} · <bdi className="font-latin">{line.storage}</bdi>
-                  {line.quantity > 1 ? <bdi className="ms-1 text-body">× {line.quantity}</bdi> : null}
-                </span>
-                <span className="shrink-0 text-white">
-                  {formatHalalas(line.unitPrice * line.quantity)} {RIYAL}
-                </span>
-              </div>
+              <SummaryLine
+                key={line.id}
+                name={
+                  <>
+                    {line.colorLabel} · <bdi className="font-latin">{line.storage}</bdi>
+                  </>
+                }
+                quantity={line.quantity}
+                unitPrice={line.unitPrice}
+              />
             ))}
           </div>
         ) : null}
@@ -185,17 +186,12 @@ export function StepPayment({ variant }: { variant: 'sheet' | 'modal' }) {
           <div className="flex flex-col gap-1 text-[13px]">
             <span className="text-body">{FLOW.step3.addonsLabel}</span>
             {selectedAddons.map((addon) => (
-              <div key={addon.id} className="flex items-start justify-between gap-3">
-                <span className="text-white">
-                  {addon.name_ar}
-                  {addon.quantity > 1 ? (
-                    <bdi className="ms-1 text-body">× {addon.quantity}</bdi>
-                  ) : null}
-                </span>
-                <span className="shrink-0 text-white">
-                  {formatHalalas(addon.price * addon.quantity)} {RIYAL}
-                </span>
-              </div>
+              <SummaryLine
+                key={addon.id}
+                name={addon.name_ar}
+                quantity={addon.quantity}
+                unitPrice={addon.price}
+              />
             ))}
           </div>
         ) : null}
@@ -236,5 +232,56 @@ export function StepPayment({ variant }: { variant: 'sheet' | 'modal' }) {
         </>
       )}
     </div>
+  );
+}
+
+/**
+ * «×3» as its own pill beside the product name. Forced LTR and kept out of the
+ * name's text run, so it never fuses with a trailing Latin word like «USB-C».
+ */
+/**
+ * One summary row: the quantity as its own badge first (so it never runs into
+ * the product name), the name, and — for more than one — the per-piece price.
+ */
+function SummaryLine({
+  name,
+  quantity,
+  unitPrice,
+}: {
+  name: React.ReactNode;
+  quantity: number;
+  unitPrice: number;
+}) {
+  return (
+    <div className="flex items-start justify-between gap-3">
+      <span className="flex min-w-0 items-start gap-2">
+        <QtyBadge quantity={quantity} />
+        <span className="flex min-w-0 flex-col gap-0.5">
+          <span className="text-white">{name}</span>
+          {quantity > 1 ? (
+            <span className="text-[11px] text-muted">
+              {formatHalalas(unitPrice)} {RIYAL} {FLOW.step3.perPiece}
+            </span>
+          ) : null}
+        </span>
+      </span>
+      <span className="shrink-0 text-white">
+        {formatHalalas(unitPrice * quantity)} {RIYAL}
+      </span>
+    </div>
+  );
+}
+
+/** «3×» pill; hidden for a single piece. */
+function QtyBadge({ quantity }: { quantity: number }) {
+  if (quantity <= 1) return null;
+  return (
+    <span
+      dir="ltr"
+      aria-label={`${FLOW.step1.quantity} ${quantity}`}
+      className="mt-px inline-flex h-5 min-w-7 shrink-0 items-center justify-center rounded-full bg-pink px-1.5 font-latin text-[11px] font-extrabold leading-none text-on-pink"
+    >
+      {quantity}×
+    </span>
   );
 }
