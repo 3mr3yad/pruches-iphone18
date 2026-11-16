@@ -79,12 +79,16 @@ function callbackUrl(orderNumber: string): string {
 }
 
 export function StepPayment({ variant }: { variant: 'sheet' | 'modal' }) {
-  const { order, variant: device, activeColor, method, selectedBranch, activeEdition, selectedAddons } =
-    usePurchaseFlow();
+  const { order, method, selectedBranch, selectedAddons, phoneLines } = usePurchaseFlow();
+  // e.g. «أسود 256GB × 2، فضي 512GB» — every phone in the order.
+  const phonesText = phoneLines
+    .map((line) => `${line.colorLabel} ${line.storage}${line.quantity > 1 ? ` × ${line.quantity}` : ''}`)
+    .join('، ');
+  const colorsText = [...new Set(phoneLines.map((line) => line.colorLabel))].join('، ');
+  const editionLabel = [...new Set(phoneLines.map((line) => line.editionLabel))].join('، ');
   const addonNames = selectedAddons
     .map((addon) => (addon.quantity > 1 ? `${addon.name_ar} × ${addon.quantity}` : addon.name_ar))
     .join('، ');
-  const editionLabel = activeEdition.label;
   const branchName = method === 'pickup' ? (selectedBranch?.name ?? '') : '';
   const formClass = `mysr-form-${useId().replace(/[^a-zA-Z0-9]/g, '')}`;
   const hostRef = useRef<HTMLDivElement>(null);
@@ -100,7 +104,7 @@ export function StepPayment({ variant }: { variant: 'sheet' | 'modal' }) {
     loadMpf()
       .then(() => {
         if (cancelled || !window.Moyasar) return;
-        const description = [PRODUCT_NAME_AR, activeColor?.label, device?.storage_label, editionLabel, branchName, order.order_number]
+        const description = [PRODUCT_NAME_AR, phonesText, editionLabel, branchName, order.order_number]
           .filter(Boolean)
           .join(' · ');
 
@@ -120,7 +124,8 @@ export function StepPayment({ variant }: { variant: 'sheet' | 'modal' }) {
           // branch: the pickup branch the customer picked (same reason).
           metadata: {
             order_number: order.order_number,
-            color: activeColor?.label ?? '',
+            color: colorsText,
+            phones: phonesText,
             edition: editionLabel,
             ...(branchName ? { branch: branchName } : {}),
             ...(addonNames ? { addons: addonNames } : {}),
@@ -145,7 +150,7 @@ export function StepPayment({ variant }: { variant: 'sheet' | 'modal' }) {
       cancelled = true;
       if (host) host.innerHTML = '';
     };
-  }, [order, device, activeColor, branchName, editionLabel, addonNames, formClass]);
+  }, [order, phonesText, colorsText, branchName, editionLabel, addonNames, formClass]);
 
   if (!order) return null;
 
@@ -160,6 +165,22 @@ export function StepPayment({ variant }: { variant: 'sheet' | 'modal' }) {
           <span className="text-body">{FLOW.step3.orderLabel}</span>
           <bdi className="font-latin text-white">{order.order_number}</bdi>
         </div>
+        {phoneLines.length ? (
+          <div className="flex flex-col gap-1 text-[13px]">
+            <span className="text-body">{FLOW.step3.phonesLabel}</span>
+            {phoneLines.map((line) => (
+              <div key={line.id} className="flex items-start justify-between gap-3">
+                <span className="text-white">
+                  {line.colorLabel} · <bdi className="font-latin">{line.storage}</bdi>
+                  {line.quantity > 1 ? <bdi className="ms-1 text-body">× {line.quantity}</bdi> : null}
+                </span>
+                <span className="shrink-0 text-white">
+                  {formatHalalas(line.unitPrice * line.quantity)} {RIYAL}
+                </span>
+              </div>
+            ))}
+          </div>
+        ) : null}
         {selectedAddons.length ? (
           <div className="flex flex-col gap-1 text-[13px]">
             <span className="text-body">{FLOW.step3.addonsLabel}</span>

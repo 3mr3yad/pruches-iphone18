@@ -30,6 +30,7 @@ import {
   FINISHES,
   FLOW,
   MAX_ADDON_QUANTITY,
+  MAX_PHONE_QUANTITY,
   STORAGE_TIERS,
   branchDisplayName,
   branchLocationFor,
@@ -42,6 +43,25 @@ import type { CountryCode } from 'libphonenumber-js/min';
 
 /** An add-on the customer chose, with how many of it. */
 export type SelectedAddon = Addon & { quantity: number };
+
+/**
+ * One iPhone line of the order: a colour/storage/edition and how many of it.
+ * Labels and price are kept so the line can be shown without re-deriving it.
+ */
+export type PhoneLine = {
+  /** variantId + colour key (a colour without its own variant shares one). */
+  id: string;
+  variantId: number;
+  colorKey: string;
+  colorLabel: string;
+  dot: string | null;
+  storage: string;
+  editionId: EditionId;
+  editionLabel: string;
+  /** Halalas, per phone. */
+  unitPrice: number;
+  quantity: number;
+};
 
 export type Step = 1 | 2 | 3;
 export type LoadStatus = 'loading' | 'ready' | 'error';
@@ -102,6 +122,10 @@ type State = Form & {
   storage: string | null;
   /** Add-on id → how many the customer wants (absent = not selected). */
   addonQty: Record<number, number>;
+  /** How many of the configuration currently on screen. */
+  phoneQty: number;
+  /** Phones already added in other colours/sizes (the on-screen one is not in here). */
+  cart: PhoneLine[];
   showErrors: boolean;
   /** Fields the user has left at least once — gates the inline hints. */
   touched: Partial<Record<FieldKey, boolean>>;
@@ -120,6 +144,10 @@ type Action =
   | { type: 'storage'; value: string }
   | { type: 'toggleAddon'; id: number }
   | { type: 'addonQty'; id: number; quantity: number }
+  | { type: 'phoneQty'; quantity: number }
+  /** Saves the on-screen phone to the cart and moves the picker to `nextColor`. */
+  | { type: 'addPhone'; line: PhoneLine; nextColor: string | null }
+  | { type: 'cartQty'; id: string; quantity: number }
   | { type: 'field'; patch: Partial<Form> }
   | { type: 'showErrors' }
   | { type: 'touch'; field: FieldKey }
@@ -134,6 +162,8 @@ const initialState: State = {
   color: 'burgundy',
   storage: null,
   addonQty: {},
+  phoneQty: 1,
+  cart: [],
   edition: 'middle_east',
   /** Figma 494:153 preselects «الشحن». */
   method: 'shipping',
@@ -154,6 +184,10 @@ const initialState: State = {
   order: null,
   orderKey: null,
 };
+
+function clampPhoneQty(quantity: number, min: number): number {
+  return Math.min(MAX_PHONE_QUANTITY, Math.max(min, Math.round(quantity)));
+}
 
 function reducer(state: State, action: Action): State {
   switch (action.type) {
@@ -182,6 +216,34 @@ function reducer(state: State, action: Action): State {
       const quantity = Math.min(MAX_ADDON_QUANTITY, Math.max(0, Math.round(action.quantity)));
       const { [action.id]: _removed, ...rest } = state.addonQty;
       return { ...state, addonQty: quantity > 0 ? { ...rest, [action.id]: quantity } : rest };
+    }
+    case 'phoneQty':
+      return { ...state, phoneQty: clampPhoneQty(action.quantity, 1) };
+    case 'addPhone': {
+      const existing = state.cart.find((line) => line.id === action.line.id);
+      const cart = existing
+        ? state.cart.map((line) =>
+            line.id === action.line.id
+              ? { ...line, quantity: clampPhoneQty(line.quantity + action.line.quantity, 1) }
+              : line,
+          )
+        : [...state.cart, action.line];
+      return {
+        ...state,
+        cart,
+        phoneQty: 1,
+        ...(action.nextColor ? { color: action.nextColor } : {}),
+      };
+    }
+    case 'cartQty': {
+      const quantity = clampPhoneQty(action.quantity, 0);
+      return {
+        ...state,
+        cart:
+          quantity > 0
+            ? state.cart.map((line) => (line.id === action.id ? { ...line, quantity } : line))
+            : state.cart.filter((line) => line.id !== action.id),
+      };
     }
     case 'field':
       return { ...state, ...action.patch, error: null };
@@ -227,6 +289,12 @@ function colorOptions(variants: Variant[]): ColorOption[] {
     .filter((k) => !finishIdFor(k))
     .map((k) => ({ key: k, label: apiColors.get(k) ?? k, dot: null, orderable: true }));
   return [...finishes, ...extra];
+}
+
+/** Swatch colour for an API colour key that has no finish of its own. */
+function dotForKey(colorKey: string): string {
+  const id = finishIdFor(colorKey);
+  return FINISHES.find((finish) => finish.id === id)?.dot ?? '#6B6B70';
 }
 
 /** Picks the API colour for `wanted`: exact key, then same finish, then the first. */
@@ -313,6 +381,21 @@ type FlowApi = State & {
   /** What the chosen configuration costs (halalas), shown in step 1. */
   unitPrice: number | null;
   variant: Variant | null;
+  /** The on-screen configuration as an order line (null until a variant resolves). */
+  currentLine: PhoneLine | null;
+  /** Every phone in the order: the cart plus the on-screen one, merged by variant. */
+  phoneLines: PhoneLine[];
+  /** Sum of unit price × quantity over phoneLines (halalas). */
+  phonesTotal: number;
+  /** Number of iPhones in the order. */
+  phoneCount: number;
+  /** False once the order holds MAX_PHONE_QUANTITY phones. */
+  canAddPhone: boolean;
+  setPhoneQuantity: (quantity: number) => void;
+  /** Keeps the on-screen phone in the order and switches the picker to another colour. */
+  addAnotherPhone: () => void;
+  /** Sets a cart line's quantity (0 removes it). */
+  setCartQuantity: (id: string, quantity: number) => void;
   fieldErrors: FieldErrors;
   canContinue: boolean;
   /** Opens the flow and remembers the trigger so focus can be restored. */
@@ -473,6 +556,43 @@ export function PurchaseFlowProvider({ children }: { children: ReactNode }) {
   const activeEdition = editionOptions.find((e) => e.id === editionId) ?? editionOptions[0];
   const unitPrice = variant ? activeEdition.displayPrice : null;
 
+  const currentLine = useMemo<PhoneLine | null>(() => {
+    if (!variant || !activeColor || unitPrice === null) return null;
+    return {
+      id: `${variant.id}:${activeColor.key}`,
+      variantId: variant.id,
+      colorKey: activeColor.key,
+      colorLabel: activeColor.label,
+      dot: activeColor.dot ?? dotForKey(activeColor.key),
+      storage: variant.storage_label,
+      editionId: activeEdition.id,
+      editionLabel: activeEdition.label,
+      unitPrice,
+      quantity: state.phoneQty,
+    };
+  }, [variant, activeColor, activeEdition, unitPrice, state.phoneQty]);
+
+  const phoneLines = useMemo<PhoneLine[]>(() => {
+    const lines = state.cart.map((line) => ({ ...line }));
+    if (currentLine) {
+      const same = lines.find((line) => line.id === currentLine.id);
+      if (same) same.quantity += currentLine.quantity;
+      else lines.push(currentLine);
+    }
+    return lines;
+  }, [state.cart, currentLine]);
+  const phonesTotal = phoneLines.reduce((sum, line) => sum + line.unitPrice * line.quantity, 0);
+  const phoneCount = phoneLines.reduce((sum, line) => sum + line.quantity, 0);
+  const canAddPhone = phoneCount < MAX_PHONE_QUANTITY;
+
+  const addAnotherPhone = useCallback(() => {
+    if (!currentLine || !canAddPhone) return;
+    // Move the picker to the first colour not in the order yet (else keep it).
+    const used = new Set([...state.cart.map((line) => line.colorKey), currentLine.colorKey]);
+    const next = colors.find((option) => option.orderable && !used.has(option.key));
+    dispatch({ type: 'addPhone', line: currentLine, nextColor: next?.key ?? null });
+  }, [currentLine, canAddPhone, state.cart, colors]);
+
   const branchOptions = useMemo<BranchOption[]>(() => {
     const known = BRANCH_LOCATIONS.map((location) => {
       const api = branches.find((branch) => branch.name_ar.includes(location.match));
@@ -513,9 +633,14 @@ export function PurchaseFlowProvider({ children }: { children: ReactNode }) {
     state.step === 1 ? Boolean(variant) : state.step === 2 ? !state.submitting : false;
 
   const submitOrder = useCallback(async () => {
-    if (!variant || !phone) return;
+    if (!variant || !phone || phoneLines.length === 0) return;
+    // One item per variant (two colours sharing a fallback variant are summed).
+    const quantities = new Map<number, number>();
+    for (const line of phoneLines) {
+      quantities.set(line.variantId, (quantities.get(line.variantId) ?? 0) + line.quantity);
+    }
     const base = {
-      variant_id: variant.id,
+      items: [...quantities].map(([variant_id, quantity]) => ({ variant_id, quantity })),
       customer_name: state.name.trim(),
       customer_phone: phone,
       customer_email: state.email.trim(),
@@ -557,7 +682,7 @@ export function PurchaseFlowProvider({ children }: { children: ReactNode }) {
     } catch (error) {
       dispatch({ type: 'failed', error: orderErrorMessage(error) });
     }
-  }, [variant, phone, state, selectedBranch, branches, selectedAddons]);
+  }, [variant, phone, phoneLines, state, selectedBranch, branches, selectedAddons]);
 
   const next = useCallback(() => {
     if (state.step === 1) {
@@ -598,6 +723,14 @@ export function PurchaseFlowProvider({ children }: { children: ReactNode }) {
       activeEdition,
       unitPrice,
       variant,
+      currentLine,
+      phoneLines,
+      phonesTotal,
+      phoneCount,
+      canAddPhone,
+      setPhoneQuantity: (quantity) => dispatch({ type: 'phoneQty', quantity }),
+      addAnotherPhone,
+      setCartQuantity: (id, quantity) => dispatch({ type: 'cartQty', id, quantity }),
       fieldErrors,
       canContinue,
       openFlow,
@@ -632,6 +765,12 @@ export function PurchaseFlowProvider({ children }: { children: ReactNode }) {
       activeEdition,
       unitPrice,
       variant,
+      currentLine,
+      phoneLines,
+      phonesTotal,
+      phoneCount,
+      canAddPhone,
+      addAnotherPhone,
       fieldErrors,
       canContinue,
       openFlow,

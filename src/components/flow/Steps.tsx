@@ -197,42 +197,161 @@ function QuantityRow({
   onChange: (quantity: number) => void;
   isModal: boolean;
 }) {
-  const atMax = quantity >= MAX_ADDON_QUANTITY;
-  const stepBtn =
-    'grid size-8 place-items-center rounded-full border border-white/20 text-white transition-colors duration-200 hover:border-pink hover:text-pink disabled:pointer-events-none disabled:opacity-35';
   return (
     <div className="flex items-center justify-between gap-3 border-t border-white/10 px-3 py-2">
       <div className="flex items-center gap-2.5">
         <span className={`text-xs ${isModal ? 'text-modal-body' : 'text-muted'}`}>{FLOW.step1.quantity}</span>
-        <div className="flex items-center gap-2" dir="ltr">
-          <button
-            type="button"
-            className={stepBtn}
-            onClick={() => onChange(quantity - 1)}
-            aria-label={`${quantity === 1 ? FLOW.step1.quantityRemove : FLOW.step1.quantityDecrease} · ${name}`}
-          >
-            <svg viewBox="0 0 16 16" width={12} height={12} fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" aria-hidden>
-              <path d="M3.5 8h9" />
-            </svg>
-          </button>
-          <span className="min-w-6 text-center text-sm font-bold tabular-nums text-white" aria-live="polite">
-            {quantity}
-          </span>
-          <button
-            type="button"
-            className={stepBtn}
-            onClick={() => onChange(quantity + 1)}
-            disabled={atMax}
-            aria-label={`${FLOW.step1.quantityIncrease} · ${name}`}
-          >
-            <svg viewBox="0 0 16 16" width={12} height={12} fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" aria-hidden>
-              <path d="M3.5 8h9M8 3.5v9" />
-            </svg>
-          </button>
-        </div>
+        <Stepper
+          name={name}
+          quantity={quantity}
+          onChange={onChange}
+          canIncrease={quantity < MAX_ADDON_QUANTITY}
+          removable
+        />
       </div>
       {quantity > 1 ? (
         <AnimatedValue value={`${formatHalalas(lineTotal)} ${RIYAL}`} className="text-[13px] font-bold text-pink md:text-sm" />
+      ) : null}
+    </div>
+  );
+}
+
+/**
+ * − n + control. With `removable`, «−» at 1 goes to 0 (the caller removes the
+ * line); otherwise it stops at 1.
+ */
+function Stepper({
+  name,
+  quantity,
+  onChange,
+  canIncrease,
+  removable = false,
+}: {
+  name: string;
+  quantity: number;
+  onChange: (quantity: number) => void;
+  canIncrease: boolean;
+  removable?: boolean;
+}) {
+  const stepBtn =
+    'grid size-8 place-items-center rounded-full border border-white/20 text-white transition-colors duration-200 hover:border-pink hover:text-pink disabled:pointer-events-none disabled:opacity-35';
+  return (
+    <div className="flex items-center gap-2" dir="ltr">
+      <button
+        type="button"
+        className={stepBtn}
+        onClick={() => onChange(quantity - 1)}
+        disabled={!removable && quantity <= 1}
+        aria-label={`${removable && quantity === 1 ? FLOW.step1.quantityRemove : FLOW.step1.quantityDecrease} · ${name}`}
+      >
+        <svg viewBox="0 0 16 16" width={12} height={12} fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" aria-hidden>
+          <path d="M3.5 8h9" />
+        </svg>
+      </button>
+      <span className="min-w-6 text-center text-sm font-bold tabular-nums text-white" aria-live="polite">
+        {quantity}
+      </span>
+      <button
+        type="button"
+        className={stepBtn}
+        onClick={() => onChange(quantity + 1)}
+        disabled={!canIncrease}
+        aria-label={`${FLOW.step1.quantityIncrease} · ${name}`}
+      >
+        <svg viewBox="0 0 16 16" width={12} height={12} fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" aria-hidden>
+          <path d="M3.5 8h9M8 3.5v9" />
+        </svg>
+      </button>
+    </div>
+  );
+}
+
+/* ------------------------- several phones per order ------------------------- */
+
+/**
+ * How many of the on-screen phone, a button to add another in a different
+ * colour, and the phones already added (each with its own quantity).
+ */
+function PhonesPicker({ variant }: { variant: Variant }) {
+  const {
+    currentLine,
+    phoneQty,
+    setPhoneQuantity,
+    cart,
+    setCartQuantity,
+    addAnotherPhone,
+    canAddPhone,
+    phoneCount,
+  } = usePurchaseFlow();
+  const isModal = variant === 'modal';
+  const lineName = (line: { colorLabel: string; storage: string }) => `${line.colorLabel} · ${line.storage}`;
+
+  return (
+    <div className="flex flex-col gap-2.5 md:gap-2">
+      <div className="flex w-full items-center justify-between">
+        <p className={isModal ? 'text-base font-bold text-white' : 'text-sm font-bold text-white'}>
+          {FLOW.step1.phoneQtyLabel}
+        </p>
+        <Stepper
+          name={currentLine ? lineName(currentLine) : FLOW.step1.phoneQtyLabel}
+          quantity={phoneQty}
+          onChange={setPhoneQuantity}
+          canIncrease={canAddPhone}
+        />
+      </div>
+
+      {cart.length ? (
+        <div
+          className={`flex flex-col rounded-2xl border ${
+            isModal ? 'border-modal-tile-line bg-modal-tile' : 'border-line-2 bg-card'
+          }`}
+        >
+          <p className={`px-3 pt-2.5 text-xs ${isModal ? 'text-modal-body' : 'text-muted'}`}>{FLOW.step1.cartLabel}</p>
+          {cart.map((line, index) => (
+            <div
+              key={line.id}
+              className={`flex items-center gap-3 px-3 py-2.5 ${index > 0 ? 'border-t border-white/10' : ''}`}
+            >
+              <span
+                aria-hidden
+                className="size-5 shrink-0 rounded-full ring-1 ring-inset ring-white/25"
+                style={{ backgroundColor: line.dot ?? undefined }}
+              />
+              <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+                <span className="text-[13px] font-bold leading-snug text-white md:text-sm">
+                  {line.colorLabel} · <bdi className="font-latin">{line.storage}</bdi>
+                </span>
+                <span className="line-clamp-1 text-[11px] leading-tight text-muted md:text-xs">
+                  {line.editionLabel} · {formatHalalas(line.unitPrice * line.quantity)} {RIYAL}
+                </span>
+              </span>
+              <Stepper
+                name={lineName(line)}
+                quantity={line.quantity}
+                onChange={(next) => setCartQuantity(line.id, next)}
+                canIncrease={canAddPhone}
+                removable
+              />
+            </div>
+          ))}
+        </div>
+      ) : null}
+
+      <button
+        type="button"
+        onClick={addAnotherPhone}
+        disabled={!currentLine || !canAddPhone}
+        className="flex min-h-11 w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-white/25 px-3 text-[13px] font-bold text-white transition-colors duration-200 hover:border-pink hover:text-pink disabled:pointer-events-none disabled:opacity-40 md:text-sm"
+      >
+        <svg viewBox="0 0 16 16" width={14} height={14} fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" aria-hidden>
+          <path d="M3.5 8h9M8 3.5v9" />
+        </svg>
+        {FLOW.step1.addAnotherPhone}
+      </button>
+      {!canAddPhone ? (
+        <p className={`text-start text-muted ${isModal ? 'text-[11px]' : 'text-[12.5px]'}`}>
+          {FLOW.step1.phoneLimit} ({FLOW.step1.phonesUnit(phoneCount)})
+        </p>
       ) : null}
     </div>
   );
@@ -275,6 +394,8 @@ export function StepColorStorage({ variant }: { variant: Variant }) {
     activeEdition,
     unitPrice,
     addonsTotal,
+    phonesTotal,
+    phoneCount,
   } = usePurchaseFlow();
   const activeFulfillment = FULFILLMENTS.find((item) => item.id === method) ?? FULFILLMENTS[1];
   const isModal = variant === 'modal';
@@ -305,8 +426,16 @@ export function StepColorStorage({ variant }: { variant: Variant }) {
 
   // The chosen edition's price (the variant itself is shared until the API sells editions).
   const shownPrice = unitPrice ?? storageOptions.find((o) => o.available && o.label === activeStorage)?.price;
-  const price = shownPrice === undefined ? '—' : formatHalalas(shownPrice);
-
+  // Several phones: the summary shows their count and combined price.
+  const multi = phoneCount > 1;
+  const price = multi
+    ? formatHalalas(phonesTotal)
+    : shownPrice === undefined
+      ? '—'
+      : formatHalalas(shownPrice);
+  const choiceText = multi
+    ? FLOW.step1.phonesUnit(phoneCount)
+    : `${activeColor?.label ?? ''} · ${activeStorage ?? ''}`;
 
 
   return (
@@ -452,6 +581,8 @@ export function StepColorStorage({ variant }: { variant: Variant }) {
         </div>
       </div>
 
+      <PhonesPicker variant={variant} />
+
       <AddonsPicker variant={variant} />
 
       {/* Fulfillment method — frame 494:153 */}
@@ -501,9 +632,15 @@ export function StepColorStorage({ variant }: { variant: Variant }) {
           <div className="flex w-full items-center justify-between">
             <p className="text-sm text-modal-body">{FLOW.step1.summaryLabel}</p>
             <div className="flex items-center gap-2.5">
-              <AnimatedValue value={activeColor?.label ?? ''} className="text-[15px] font-semibold text-white" />
-              <span aria-hidden className="size-[3px] rounded-full bg-modal-body" />
-              <AnimatedValue value={activeStorage ?? ''} className="font-latin text-[15px] text-white" />
+              {multi ? (
+                <AnimatedValue value={choiceText} className="text-[15px] font-semibold text-white" />
+              ) : (
+                <>
+                  <AnimatedValue value={activeColor?.label ?? ''} className="text-[15px] font-semibold text-white" />
+                  <span aria-hidden className="size-[3px] rounded-full bg-modal-body" />
+                  <AnimatedValue value={activeStorage ?? ''} className="font-latin text-[15px] text-white" />
+                </>
+              )}
               <span aria-hidden className="size-[3px] rounded-full bg-modal-body" />
               <AnimatedValue value={`${price} ${RIYAL}`} className="text-[15px] font-bold text-pink" />
             </div>
@@ -526,8 +663,8 @@ export function StepColorStorage({ variant }: { variant: Variant }) {
         <div className="flex w-full items-center justify-between rounded-2xl border border-line bg-card px-4 py-3.5">
           <div className="flex flex-col items-start gap-0.5">
             <div className="flex items-center gap-1 text-[13px] text-body">
-              <span>اختيارك: {activeColor?.label} ·</span>
-              <AnimatedValue value={activeStorage ?? ''} className="font-latin" />
+              <span>{FLOW.step1.summaryLabel}:</span>
+              <AnimatedValue value={choiceText} />
             </div>
             <AnimatedValue
               value={

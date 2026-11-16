@@ -414,6 +414,9 @@ export const ADDONS_META: Record<string, { image: string; subtitle: string }> = 
 /** Most units of one add-on per order (the order API caps it at 10 too). */
 export const MAX_ADDON_QUANTITY = 10;
 
+/** Most iPhones per order across all colours (the order API caps it at 10 too). */
+export const MAX_PHONE_QUANTITY = 10;
+
 /** Shipping to any city in the Kingdom, in halalas. Display only — the charge is the order's amount. */
 export const SHIPPING_FEE = 4900;
 
@@ -489,6 +492,11 @@ export const FLOW = {
     quantityIncrease: 'زيادة الكمية',
     quantityDecrease: 'تقليل الكمية',
     quantityRemove: 'إزالة',
+    phoneQtyLabel: 'عدد الأجهزة',
+    addAnotherPhone: 'أضف جهازاً آخر بلون مختلف',
+    phoneLimit: 'الحد الأقصى ١٠ أجهزة في الطلب الواحد.',
+    cartLabel: 'أجهزة أخرى في طلبك',
+    phonesUnit: (n: number) => (n === 1 ? 'جهاز واحد' : n === 2 ? 'جهازان' : n <= 10 ? `${n} أجهزة` : `${n} جهازاً`),
     shippingLine: 'الشحن',
     shippingFree: 'الاستلام من الفرع مجاناً',
     summaryLabel: 'اختيارك',
@@ -570,6 +578,7 @@ export const FLOW = {
     sub: 'ادفع بأمان عبر ميسر لتأكيد طلبك.',
     orderLabel: 'رقم الطلب',
     totalLabel: 'الإجمالي',
+    phonesLabel: 'الأجهزة',
     addonsLabel: 'الإضافات',
     loading: 'جارٍ تجهيز نموذج الدفع…',
     loadError: 'تعذّر تحميل نموذج الدفع. حدّث الصفحة وحاول مرة أخرى.',

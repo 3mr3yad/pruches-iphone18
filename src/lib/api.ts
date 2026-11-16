@@ -56,7 +56,8 @@ export type Branch = {
 export type FulfillmentMethod = 'pickup' | 'shipping';
 
 export type CreateOrderBody = {
-  variant_id: number;
+  /** The iPhones: one entry per variant (colour/storage/edition) with its quantity. */
+  items: { variant_id: number; quantity: number }[];
   customer_name: string;
   customer_phone: string;
   /** Required by the API; used for the post-payment confirmation e-mail. */
