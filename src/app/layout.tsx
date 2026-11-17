@@ -15,9 +15,9 @@ import '@fontsource/poppins/600.css';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'iPhone 18 Pro Max — استلام فوري من عالم وافي',
+  title: 'iPhone 18 Pro Max — استلام فوري من أوفل',
   description:
-    'آيفون 18 برو ماكس بسعر ٥٬٩٩٩ ريال مع استلام فوري من فروع عالم وافي في الرياض، أو توصيل لباب البيت.',
+    'آيفون 18 برو ماكس من أوفل ابتداءً من ٥٬٧٩٩ ريال، مع استلام فوري من فروع عالم وافي (شريك النجاح) في الرياض، أو توصيل لباب البيت.',
   other: { 'format-detection': 'telephone=no' },
 };
 

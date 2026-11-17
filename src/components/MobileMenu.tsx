@@ -113,7 +113,7 @@ export function MobileMenu({ open, onClose }: { open: boolean; onClose: () => vo
                   <p className="text-sm font-bold text-white">
                     {PRICE_WAFI} {RIYAL}
                   </p>
-                  <p className="text-xs text-body">سعر وافي</p>
+                  <p className="text-xs text-body">سعر أوفل</p>
                 </div>
                 <div className="flex flex-1 flex-col items-end rounded-2xl border border-line p-3">
                   <p className="text-sm font-bold text-white">

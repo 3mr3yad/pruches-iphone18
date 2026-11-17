@@ -1,22 +1,121 @@
 'use client';
 
-import Image from 'next/image';
 import { motion } from 'motion/react';
 import { EASE, fadeUp, flat, inView } from '@/lib/motion';
-import { PRICE_COMPARE, PRICE_COMPETITORS, PRICE_SAVING, PRICE_WAFI, RIYAL } from '@/lib/content';
+import { useMemo } from 'react';
+import { EDITIONS, PRICE_COMPARE, PRICE_SAVING, RIYAL } from '@/lib/content';
+import { formatHalalas } from '@/lib/format';
 import { useMotionPrefs } from '@/hooks/useMotionPrefs';
 import { usePurchaseFlow } from '@/hooks/usePurchaseFlow';
 import { Reveal, RevealItem } from '../ui/Reveal';
 import { Button } from '../ui/Button';
 
-const { eyebrow, title, wafi, competitors, savings, cta } = PRICE_COMPARE;
+const { eyebrow, title, wafi, partner, savings, cta } = PRICE_COMPARE;
 
-function Point({ icon, children }: { icon: string; children: React.ReactNode }) {
+/**
+ * Each edition's 256GB price: the lowest the order API sells it for, else the
+ * fallback in EDITIONS (before the catalog loads, or if it fails).
+ */
+function useEditionPrices() {
+  const { variants } = usePurchaseFlow();
+  return useMemo(
+    () =>
+      EDITIONS.map((edition) => {
+        const prices = variants
+          .filter((v) => v.edition === edition.id && v.storage_label === '256GB')
+          .map((v) => v.price);
+        return {
+          id: edition.id,
+          label: `${wafi.editionPrefix} ${edition.short}`,
+          warranty: edition.warranty,
+          price: prices.length ? Math.min(...prices) : edition.price,
+        };
+      }),
+    [variants],
+  );
+}
+
+type EditionPrice = ReturnType<typeof useEditionPrices>[number];
+
+/** Opens the purchase flow with this edition already picked. */
+function useBuyEdition() {
+  const { openFlow, setField } = usePurchaseFlow();
+  return (edition: EditionPrice, trigger: HTMLElement) => {
+    setField({ edition: edition.id });
+    openFlow(trigger);
+  };
+}
+
+/** An Awfal card for one edition (mobile / md). */
+function EditionCardMobile({ edition }: { edition: EditionPrice }) {
+  const buy = useBuyEdition();
   return (
-    <li className="flex w-full items-start gap-1.5">
-      <Image src={icon} alt="" width={14} height={14} aria-hidden className="mt-0.5 shrink-0" />
-      <p className="flex-1 text-start text-xs leading-[1.5] text-body">{children}</p>
-    </li>
+    <SweepBorder className="flex-1">
+      <div className="wafi-card flex h-full flex-col items-start gap-1.5 rounded-[19px] p-4">
+        <span className="inline-flex h-6 items-center rounded-pill bg-white px-2.5 text-[11px] font-bold text-[#050505]">
+          {wafi.chip}
+        </span>
+        <p className="mt-1 text-xs text-body">{wafi.name}</p>
+        <p className="text-[13px] font-bold text-white">{edition.label}</p>
+        <p className="font-extrabold leading-[1.15] text-white">
+          <span className="text-[30px]">{formatHalalas(edition.price)}</span>{' '}
+          <span className="text-[14px] font-bold">{RIYAL}</span>
+        </p>
+        <p className="text-[11px] text-muted">{edition.warranty}</p>
+        <button
+          type="button"
+          onClick={(event) => buy(edition, event.currentTarget)}
+          className="mt-auto min-h-10 w-full rounded-pill bg-white text-[13px] font-bold text-[#050505]"
+        >
+          {cta}
+        </button>
+      </div>
+    </SweepBorder>
+  );
+}
+
+/** An Awfal card for one edition (desktop). */
+function EditionCardDesktop({ edition }: { edition: EditionPrice }) {
+  const buy = useBuyEdition();
+  return (
+    <SweepBorder className="flex-1">
+      <div className="wafi-card-desktop flex h-full flex-col gap-2 rounded-[19px] p-4">
+        <div className="flex h-10 flex-col items-start">
+          <span className="inline-flex items-center rounded-pill border border-white/15 bg-white/[0.08] px-3 py-1 text-[13px] font-bold text-white">
+            {wafi.chipDesktop}
+          </span>
+          <p className="text-sm font-bold text-pink">{wafi.tagline}</p>
+        </div>
+        <div className="flex flex-col items-start gap-1">
+          <p className="text-[15px] font-bold text-white">
+            {edition.label} <span className="font-normal text-[#c9dbec]">· {edition.warranty}</span>
+          </p>
+          <p className="text-[clamp(1.75rem,2.9vw,2.75rem)] font-extrabold leading-[1.2] text-white">
+            {formatHalalas(edition.price)} {RIYAL}
+          </p>
+          <p className="text-[15px] text-[#c9dbec]">{wafi.sub}</p>
+        </div>
+        <Button
+          variant="white"
+          className="mt-auto h-10 w-full lg:text-[18px]"
+          onClick={(event) => buy(edition, event.currentTarget)}
+        >
+          {cta}
+        </Button>
+      </div>
+    </SweepBorder>
+  );
+}
+
+/** «عالم وافي — شريك النجاح»: who the pickup branches belong to. */
+function PartnerNote({ className = '' }: { className?: string }) {
+  return (
+    <p className={`flex items-center gap-2 text-[13px] text-body ${className}`}>
+      <span className="inline-flex shrink-0 items-center rounded-pill border border-pink/40 bg-pink/[0.1] px-2.5 py-0.5 text-[11px] font-bold text-pink">
+        {partner.badge}
+      </span>
+      <span>{partner.text}</span>
+    </p>
   );
 }
 
@@ -54,6 +153,7 @@ export function PriceCompare() {
   const { openFlow } = usePurchaseFlow();
   const { reduced } = useMotionPrefs();
   const item = reduced ? flat : fadeUp;
+  const editions = useEditionPrices();
 
   return (
     <section
@@ -73,40 +173,13 @@ export function PriceCompare() {
           <span id="pickup-title">{title}</span>
         </RevealItem>
 
+        {/* RTL: Middle East on the right, International on the left. */}
         <RevealItem className="mt-6 flex w-full items-stretch gap-3">
-          {/* RTL: Wafi leads so it sits on the right, competitors on the left. */}
-          <SweepBorder className="flex-1">
-            <div className="wafi-card flex h-full flex-col items-start gap-1.5 rounded-[19px] p-4">
-              <span className="inline-flex h-6 items-center rounded-pill bg-white px-2.5 text-[11px] font-bold text-[#050505]">
-                {wafi.chip}
-              </span>
-              <p className="mt-1 text-xs text-body">{wafi.name}</p>
-              <p className="font-extrabold leading-[1.15] text-white">
-                <span className="text-[34px]">{PRICE_WAFI}</span>{' '}
-                <span className="text-[15px] font-bold">{RIYAL}</span>
-              </p>
-              <ul className="mt-auto flex w-full flex-col gap-1.5">
-                <Point icon="/icons/check-circle.svg">{wafi.points[0]}</Point>
-                <Point icon="/icons/check-circle.svg">{wafi.points[1]}</Point>
-              </ul>
-            </div>
-          </SweepBorder>
-          <div className="flex flex-1 flex-col items-start gap-1.5 rounded-card-lg border border-line bg-card p-4">
-            <span className="inline-flex h-6 items-center rounded-pill bg-white/[0.06] px-2.5 text-[11px] font-bold text-muted">
-              {competitors.chip}
-            </span>
-            <p className="mt-1 text-xs text-body">{competitors.name}</p>
-            <p className="font-extrabold leading-[1.15] text-muted">
-              <span className="text-[34px]">{PRICE_COMPETITORS}</span>{' '}
-              <span className="text-[15px] font-bold">{RIYAL}</span>
-            </p>
-            <ul className="mt-auto flex w-full flex-col gap-1.5">
-              <Point icon="/icons/clock.svg">{competitors.points[0]}</Point>
-              <Point icon="/icons/minus-circle.svg">{competitors.points[1]}</Point>
-            </ul>
-          </div>
-
+          {editions.map((edition) => (
+            <EditionCardMobile key={edition.id} edition={edition} />
+          ))}
         </RevealItem>
+
 
         <RevealItem className="mt-3 flex w-full items-center justify-between rounded-card border border-dashed border-pink/40 bg-pink/[0.08] px-4 py-3.5">
           <div className="flex flex-col items-start text-start">
@@ -114,6 +187,10 @@ export function PriceCompare() {
             <p className="text-[13px] text-body">{savings.sub}</p>
           </div>
           <SavingAmount className="text-2xl font-extrabold text-pink" />
+        </RevealItem>
+
+        <RevealItem className="mt-3 w-full">
+          <PartnerNote />
         </RevealItem>
 
         <RevealItem className="mt-5 w-full">
@@ -146,49 +223,10 @@ export function PriceCompare() {
         </motion.div>
 
         <motion.div variants={item} className="relative mt-6 flex items-stretch gap-4">
-          {/* Competitors — the ٦٬١٩٩ figure is their pre-order price, never struck through. */}
-          <div className="flex flex-1 flex-col gap-2 rounded-card-lg border border-[#2a2a2c] bg-surface p-4">
-            <div className="flex h-10 flex-col items-start">
-              <span className="inline-flex items-center rounded-pill border border-[#2a2a2c] bg-card px-3 py-1 text-[13px] font-bold text-[#a39d95]">
-                {competitors.chipDesktop}
-              </span>
-              <p className="text-sm font-bold text-[#a39d95]">{competitors.tagline}</p>
-            </div>
-            <div className="flex flex-col items-start gap-1">
-              <p className="text-[clamp(1.875rem,3.33vw,3rem)] font-extrabold leading-[1.2] text-[#8a847c]">
-                {PRICE_COMPETITORS} {RIYAL}
-              </p>
-              <p className="text-[15px] text-[#a39d95]">{competitors.sub}</p>
-            </div>
-            <div className="mt-auto flex w-full items-center gap-2 rounded-[14px] border border-[#2a2a2c] bg-card px-3 py-2.5">
-              <Image src="/icons/clock.svg" alt="" width={16} height={16} aria-hidden />
-              <p className="text-[13px] text-[#a39d95]">{competitors.note}</p>
-            </div>
-          </div>
-          {/* Wafi */}
-          <SweepBorder className="flex-1">
-            <div className="wafi-card-desktop flex h-full flex-col gap-2 rounded-[19px] p-4">
-              <div className="flex h-10 flex-col items-start">
-                <span className="inline-flex items-center rounded-pill border border-white/15 bg-white/[0.08] px-3 py-1 text-[13px] font-bold text-white">
-                  {wafi.chipDesktop}
-                </span>
-                <p className="text-sm font-bold text-pink">{wafi.tagline}</p>
-              </div>
-              <div className="flex flex-col items-start gap-1">
-                <p className="text-[clamp(1.875rem,3.33vw,3rem)] font-extrabold leading-[1.2] text-white">
-                  {PRICE_WAFI} {RIYAL}
-                </p>
-                <p className="text-[15px] text-[#c9dbec]">{wafi.sub}</p>
-              </div>
-              <Button
-                variant="white"
-                className="mt-auto h-10 w-full lg:text-[18px]"
-                onClick={(event) => openFlow(event.currentTarget)}
-              >
-                {cta}
-              </Button>
-            </div>
-          </SweepBorder>
+          {/* Awfal — one card per edition; RTL puts Middle East on the right. */}
+          {editions.map((edition) => (
+            <EditionCardDesktop key={edition.id} edition={edition} />
+          ))}
 
           {/* Savings */}
           <div className="flex flex-1 flex-col gap-2 rounded-card-lg border border-pink bg-surface p-4">
@@ -211,6 +249,10 @@ export function PriceCompare() {
             </Button>
           </div>
 
+        </motion.div>
+
+        <motion.div variants={item} className="relative mt-4 flex justify-center">
+          <PartnerNote />
         </motion.div>
       </motion.div>
     </section>
