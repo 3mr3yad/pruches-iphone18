@@ -57,26 +57,37 @@ function Block({ block }: { block: PolicyBlock }) {
       );
     case 'table':
       return (
-        <div className="overflow-hidden rounded-2xl border border-line-2">
-          <table className="w-full text-start text-sm lg:text-[15px]">
-            <caption className="border-b border-line-2 bg-card px-4 py-3 text-start text-sm font-bold leading-[1.7] text-white">
-              {block.caption}
-            </caption>
+        // Wide tables (3–4 columns) scroll sideways on phones instead of squeezing.
+        <div className="overflow-x-auto rounded-2xl border border-line-2">
+          <table className="w-full min-w-[480px] text-start text-sm lg:text-[15px]">
+            {block.caption ? (
+              <caption className="border-b border-line-2 bg-card px-4 py-3 text-start text-sm font-bold leading-[1.7] text-white">
+                {block.caption}
+              </caption>
+            ) : null}
             <thead>
               <tr className="border-b border-line-2 text-muted">
-                <th scope="col" className="px-4 py-2.5 text-start font-semibold">
-                  {block.head[0]}
-                </th>
-                <th scope="col" className="px-4 py-2.5 text-start font-semibold">
-                  {block.head[1]}
-                </th>
+                {block.head.map((cell) => (
+                  <th key={cell} scope="col" className="px-4 py-2.5 text-start font-semibold">
+                    {cell}
+                  </th>
+                ))}
               </tr>
             </thead>
             <tbody>
-              {block.rows.map(([a, b]) => (
-                <tr key={a} className="border-b border-line last:border-b-0">
-                  <td className="px-4 py-3 leading-[1.7] text-body">{a}</td>
-                  <td className="px-4 py-3 font-semibold leading-[1.7] text-white">{b}</td>
+              {block.rows.map((row) => (
+                <tr key={row[0]} className="border-b border-line last:border-b-0">
+                  {row.map((cell, index) =>
+                    index === 0 ? (
+                      <th key={index} scope="row" className="px-4 py-3 text-start font-normal leading-[1.7] text-body">
+                        {cell}
+                      </th>
+                    ) : (
+                      <td key={index} className="px-4 py-3 font-semibold leading-[1.7] text-white">
+                        {cell}
+                      </td>
+                    ),
+                  )}
                 </tr>
               ))}
             </tbody>
@@ -112,6 +123,9 @@ export default function PoliciesPage() {
             <h1 className="mt-2 text-[30px] font-extrabold leading-[1.35] text-white lg:text-[44px]">
               {POLICIES_PAGE.title}
             </h1>
+            <p className="mt-3 inline-block rounded-pill border border-pink/30 px-3 py-1 font-latin text-xs font-semibold text-pink">
+              {POLICIES_PAGE.version}
+            </p>
             <p className="mt-4 text-[15px] leading-[1.95] text-body lg:text-[17px]">{POLICIES_PAGE.lead}</p>
           </div>
 
